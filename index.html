@@ -1,0 +1,2052 @@
+<title>Python, Again</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Caveat:wght@600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a notebook — sticky level rail on the left, one level at a time in a ~720px reading column.
+   Colour comes from the notes themselves: blue ballpoint for structure, orange marker for "watch out". */
+:root {
+  --paper: #f6f7fa;
+  --sheet: #ffffff;
+  --ink: #18202f;
+  --muted: #5a6477;
+  --line: #dde2ea;
+  --cell: #eef1f6;
+  --pen: #2340c8;
+  --pen-soft: #e6eafc;
+  --marker: #d9700f;
+  --marker-soft: #fdf0e3;
+  --ok: #1d7f55;
+  --ok-soft: #e2f4ea;
+  --bad: #c3313b;
+  --bad-soft: #fbe6e7;
+  --tok-kw: #7a2fbf;
+  --tok-str: #b3461d;
+  --tok-num: #1d7f55;
+  --tok-com: #7b8496;
+  --tok-fn: #2340c8;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Verdana", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f131b; --sheet: #151a25; --ink: #e5e9f1; --muted: #98a1b3; --line: #273041; --cell: #1a2130;
+    --pen: #93a6ff; --pen-soft: #1d2547; --marker: #ffa95a; --marker-soft: #33240f;
+    --ok: #52c78f; --ok-soft: #12301f; --bad: #ff7179; --bad-soft: #3a1619;
+    --tok-kw: #c79bff; --tok-str: #ffa77f; --tok-num: #6fd6a2; --tok-com: #7d879a; --tok-fn: #93a6ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f131b; --sheet: #151a25; --ink: #e5e9f1; --muted: #98a1b3; --line: #273041; --cell: #1a2130;
+  --pen: #93a6ff; --pen-soft: #1d2547; --marker: #ffa95a; --marker-soft: #33240f;
+  --ok: #52c78f; --ok-soft: #12301f; --bad: #ff7179; --bad-soft: #3a1619;
+  --tok-kw: #c79bff; --tok-str: #ffa77f; --tok-num: #6fd6a2; --tok-com: #7d879a; --tok-fn: #93a6ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--paper); color: var(--ink); }
+body { font-family: var(--f-body); font-size: 17px; line-height: 1.6; padding-inline: 16px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; border-radius: 4px; }
+code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+p code, li code, td code, .why code, .hand code { background: var(--cell); padding: 0.05em 0.35em; border-radius: 4px; }
+
+/* ---------- top bar ---------- */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  margin-inline: -16px; padding: 10px 16px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.top-inner { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.brand { font-family: var(--f-display); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; }
+.brand .hand { font-family: var(--f-hand); color: var(--marker); font-size: 1.3rem; font-weight: 600; }
+.tabs { display: flex; gap: 4px; background: var(--cell); padding: 4px; border-radius: 999px; }
+.tab { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--sheet); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.progress { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { width: 120px; height: 8px; background: var(--cell); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--ok); border-radius: 99px; transition: width 0.4s ease; }
+
+/* ---------- learn layout ---------- */
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 24px 80px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; }
+.rail { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+.rail h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 8px; font-weight: 700; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.lvl { width: 100%; display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; text-align: left; border: 0; background: transparent; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: 0.92rem; line-height: 1.3; }
+.lvl:hover { background: var(--cell); }
+.lvl[aria-current="true"] { background: var(--pen-soft); color: var(--pen); font-weight: 700; }
+.lvl .n { font-family: var(--f-mono); font-size: 0.75rem; color: var(--muted); }
+.lvl .t { min-width: 0; }
+.lvl .m { font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lvl.done .n { color: var(--ok); }
+.lvl.done .n::before { content: "✓"; font-family: var(--f-body); font-weight: 700; }
+.lvl.done .n span { display: none; }
+.rail .tip { margin-top: 16px; font-family: var(--f-hand); font-size: 1.2rem; color: var(--marker); line-height: 1.2; }
+
+main { min-width: 0; max-width: 760px; }
+.chap-head { display: grid; gap: 6px; margin-bottom: 20px; }
+.eyebrow { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; display: flex; gap: 12px; flex-wrap: wrap; }
+.eyebrow .pg { color: var(--pen); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.05; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.tldr { font-size: 1.15rem; margin: 6px 0 0; padding: 14px 16px; background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; }
+.tldr b { color: var(--pen); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+h3 { font-family: var(--f-display); font-weight: 600; font-size: 1.3rem; margin: 34px 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+main p { margin: 10px 0; max-width: 65ch; }
+main ul { margin: 10px 0; padding-left: 1.2em; max-width: 65ch; }
+main li { margin: 4px 0; }
+
+/* key/value term list */
+.keys { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0; margin: 12px 0; border-top: 1px solid var(--line); }
+.keys > div { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.keys > .k { font-family: var(--f-mono); font-size: 0.86rem; color: var(--pen); font-weight: 600; padding-right: 20px; }
+
+/* notebook cell */
+.cell { margin: 14px 0; display: grid; grid-template-columns: 62px minmax(0, 1fr); row-gap: 4px; }
+.prompt { font-family: var(--f-mono); font-size: 0.78rem; padding-top: 11px; color: var(--pen); }
+.prompt.out { color: var(--marker); padding-top: 8px; }
+.code { background: var(--cell); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; overflow-x: auto; min-width: 0; }
+.code pre, .output pre { margin: 0; font-family: var(--f-mono); font-size: 0.86rem; line-height: 1.55; white-space: pre; }
+.output { padding: 6px 14px; min-width: 0; overflow-x: auto; position: relative; }
+.output.err pre { color: var(--bad); }
+.output .hide { display: none; }
+.hidden-out .output pre { filter: blur(6px); user-select: none; }
+.reveal { display: none; border: 1px dashed var(--line); background: var(--sheet); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+.hidden-out .reveal { display: inline-block; position: absolute; left: 14px; top: 4px; }
+.cell-note { grid-column: 2; font-size: 0.9rem; color: var(--muted); margin: 0; }
+.t-kw { color: var(--tok-kw); font-weight: 600; } .t-str { color: var(--tok-str); } .t-num { color: var(--tok-num); }
+.t-com { color: var(--tok-com); font-style: italic; } .t-fn { color: var(--tok-fn); }
+
+/* handwritten "watch out" margin note */
+.hand { margin: 18px 0; padding-left: 28px; position: relative; font-family: var(--f-hand); font-size: 1.45rem; line-height: 1.25; color: var(--marker); max-width: 60ch; }
+.hand::before { content: "↳"; position: absolute; left: 4px; top: -2px; font-family: var(--f-body); font-size: 1.1rem; }
+.hand code { font-size: 0.62em; color: var(--ink); vertical-align: 0.1em; }
+
+/* python 3 update */
+.new { margin: 16px 0; padding: 12px 14px; border: 1.5px dashed var(--pen); border-radius: 10px; background: var(--pen-soft); font-size: 0.95rem; }
+.new b:first-child { display: inline-block; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pen); margin-right: 6px; }
+
+/* tables */
+.tbl { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--cell); }
+tr:last-child td { border-bottom: 0; }
+td.y { color: var(--ok); font-weight: 700; } td.n { color: var(--bad); font-weight: 700; }
+
+/* diagram */
+.tree { font-family: var(--f-mono); font-size: 0.85rem; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; overflow-x: auto; margin: 14px 0; }
+.tree pre { margin: 0; }
+
+/* practice */
+.practice { margin-top: 40px; }
+.practice h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.practice h3 .score { font-family: var(--f-body); font-size: 0.85rem; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.ex-intro { color: var(--muted); font-size: 0.93rem; }
+.ex { padding: 16px 0; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.ex-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ex-n { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pen); font-weight: 700; }
+.ex-done { font-size: 0.88rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.ex-done input { width: 18px; height: 18px; accent-color: var(--ok); margin: 0; }
+.ex-task { margin: 0; font-weight: 700; }
+.ex textarea { width: 100%; min-height: 96px; resize: vertical; font-family: var(--f-mono); font-size: 0.86rem; line-height: 1.55; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--sheet); color: var(--ink); tab-size: 4; }
+.ex textarea:focus { border-color: var(--pen); outline: none; }
+.ex-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.small { padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; }
+.ex-hint { margin: 0; padding: 10px 12px; background: var(--marker-soft); border-radius: 8px; font-size: 0.93rem; }
+.ex-sol .cell { margin: 0; }
+
+/* quiz */
+.quiz { margin-top: 40px; padding: 20px; background: var(--sheet); border: 1px solid var(--line); border-radius: 14px; }
+.quiz h3 { margin-top: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.quiz h3 .score { font-family: var(--f-body); font-size: 0.85rem; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.q { padding: 14px 0; border-top: 1px solid var(--line); }
+.q:first-of-type { border-top: 0; }
+.q .qt { font-weight: 700; margin: 0 0 8px; }
+.q .code { margin-bottom: 10px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { border: 1.5px solid var(--line); background: var(--paper); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: var(--f-mono); font-size: 0.85rem; text-align: left; }
+.opt:hover:not(:disabled) { border-color: var(--pen); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.why { margin: 10px 0 0; font-size: 0.93rem; color: var(--muted); }
+.why strong { color: var(--ink); }
+
+.nav { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1.5px solid var(--line); background: var(--sheet); padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+.btn:hover { border-color: var(--pen); }
+.btn.primary { background: var(--pen); border-color: var(--pen); color: var(--sheet); }
+.btn.donebtn[aria-pressed="true"] { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.nav .spacer { flex: 1; }
+
+.mode-row { display: flex; gap: 10px; align-items: center; font-size: 0.88rem; color: var(--muted); margin: 4px 0 0; flex-wrap: wrap; }
+.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.switch input { width: 36px; height: 20px; appearance: none; background: var(--line); border-radius: 99px; position: relative; cursor: pointer; transition: background 0.2s; margin: 0; }
+.switch input::after { content: ""; position: absolute; width: 16px; height: 16px; top: 2px; left: 2px; background: var(--sheet); border-radius: 50%; transition: transform 0.2s; }
+.switch input:checked { background: var(--pen); }
+.switch input:checked::after { transform: translateX(16px); }
+
+/* ---------- drill ---------- */
+.drill { max-width: 640px; margin: 0 auto; padding-block: 32px 80px; display: grid; gap: 18px; }
+.drill-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.drill-head h1 { font-size: 2rem; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--sheet); border-radius: 99px; padding: 4px 12px; font-size: 0.8rem; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--pen); border-color: var(--pen); color: var(--sheet); }
+.card { min-height: 280px; background: var(--sheet); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: grid; align-content: center; gap: 14px; cursor: pointer; box-shadow: 0 10px 30px -18px rgb(20 30 60 / 0.35); }
+.card .from { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.card .face { font-family: var(--f-display); font-weight: 600; font-size: 1.45rem; line-height: 1.3; text-wrap: balance; }
+.card .back { font-size: 1.08rem; border-top: 1px dashed var(--line); padding-top: 14px; }
+.card .back code { background: var(--cell); padding: 0.05em 0.35em; border-radius: 4px; }
+.card .hint { font-size: 0.82rem; color: var(--muted); }
+.drill-ctrl { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.drill-ctrl .count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
+.drill-ctrl .grp { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.know { border-color: var(--ok); color: var(--ok); }
+.btn.again { border-color: var(--marker); color: var(--marker); }
+
+/* ---------- cheat sheet ---------- */
+.sheet { max-width: 1120px; margin: 0 auto; padding-block: 32px 80px; }
+.sheet > h1 { margin-bottom: 6px; }
+.sheet > p { color: var(--muted); margin: 0 0 20px; }
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.box { background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+.box h2 { font-family: var(--f-display); font-size: 1.1rem; margin: 0 0 8px; font-weight: 600; }
+.box pre { margin: 0; font-family: var(--f-mono); font-size: 0.8rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.box .c { color: var(--tok-com); }
+.box.wide { grid-column: 1 / -1; }
+
+@media (max-width: 860px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 12px; }
+  .rail { position: static; max-height: none; margin-inline: -16px; padding-inline: 16px; overflow-x: auto; }
+  .rail h2, .rail .tip { display: none; }
+  .rail ol { display: flex; gap: 6px; width: max-content; padding-bottom: 6px; }
+  .lvl { grid-template-columns: auto auto; border: 1px solid var(--line); background: var(--sheet); white-space: nowrap; padding: 6px 10px; }
+  .lvl .m { display: none; }
+  .progress { margin-left: 0; width: 100%; }
+  .bar { flex: 1; }
+}
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .cell { grid-template-columns: minmax(0, 1fr); }
+  .prompt { padding-top: 0; }
+  .cell-note { grid-column: 1; }
+  .keys { grid-template-columns: minmax(0, 1fr); }
+  .keys > .k { border-bottom: 0; padding-bottom: 0; }
+  .hand { font-size: 1.3rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">Python, Again <span class="hand">from your old notes</span></div>
+    <div class="tabs" role="tablist" aria-label="Mode">
+      <button class="tab" role="tab" id="tab-learn" aria-selected="true" data-view="learn">Learn</button>
+      <button class="tab" role="tab" id="tab-drill" aria-selected="false" data-view="drill">Flashcards</button>
+      <button class="tab" role="tab" id="tab-sheet" aria-selected="false" data-view="sheet">Cheat sheet</button>
+    </div>
+    <div class="progress"><span id="prog-label">0/15 levels · 0/51 exercises</span><div class="bar"><i id="prog-bar"></i></div></div>
+  </div>
+</header>
+
+<section id="view-learn" class="wrap">
+  <nav class="rail" aria-label="Levels">
+    <h2>15 levels · 51 exercises</h2>
+    <ol id="rail"></ol>
+    <p class="tip">One level, then a break.<br>Done beats perfect.</p>
+  </nav>
+  <main id="chapter" tabindex="-1"></main>
+</section>
+
+<section id="view-drill" class="drill" hidden>
+  <div class="drill-head">
+    <h1>Flashcards</h1>
+    <div class="filters" id="drill-filters"></div>
+  </div>
+  <div class="card" id="card" role="button" tabindex="0" aria-live="polite"></div>
+  <div class="drill-ctrl">
+    <span class="count" id="drill-count"></span>
+    <div class="grp">
+      <button class="btn again" id="btn-again">Again ←</button>
+      <button class="btn know" id="btn-know">Got it →</button>
+    </div>
+  </div>
+  <p class="hint" style="color:var(--muted);font-size:.85rem;margin:0">Space flips the card. → means you knew it. ← puts it back in the pile. Cards you miss come back later.</p>
+</section>
+
+<section id="view-sheet" class="sheet" hidden>
+  <h1>Cheat sheet</h1>
+  <p>Everything in your notes on one page.</p>
+  <div class="sheet-grid" id="sheet"></div>
+</section>
+
+<script>
+const R = String.raw;
+
+/* ======================= CONTENT ======================= */
+const CH = [
+{
+  id: "basics", title: "Python basics", mins: 5, pages: "p.1–2",
+  tldr: "Python cares about indentation, is case-sensitive, and lets you put several assignments on one line.",
+  blocks: [
+    {t:"p", h:"Why Python for data work: it is simple to learn, it has the best AI packages (<code>numpy</code>, <code>scipy</code>, <code>matplotlib</code>, <code>scikit-learn</code>, <code>tensorflow</code>), and Jupyter notebooks let you explore data one cell at a time."},
+    {t:"keys", items:[
+      ["keyword", "A reserved word like <code>if</code>, <code>for</code> or <code>def</code>. You can't use it as a name."],
+      ["identifier", "Any name you choose for a variable, function or class."],
+      ["case-sensitive", "<code>Name</code> and <code>name</code> are two different things. So are <code>True</code> and <code>true</code>."],
+      ["indentation", "The spaces at the start of a line mark a block. Python has no <code>{ }</code> braces."],
+    ]},
+    {t:"cell", c:R`import keyword
+print(keyword.kwlist)
+print("Total number of keywords", len(keyword.kwlist))`, o:R`['False', 'None', 'True', 'and', 'as', 'assert', 'async', ...]
+Total number of keywords 35`},
+    {t:"new", h:"Python 3 has 35 keywords. <code>print</code> is not one of them. It's a normal function, so you always call it with brackets: <code>print(x)</code>."},
+    {t:"h", h:"Indentation is the block"},
+    {t:"cell", c:R`if True:
+    print("This gets printed")
+if False:
+    print("This doesn't get printed")`, o:R`This gets printed`},
+    {t:"h", h:"Long lines, short lines"},
+    {t:"cell", c:R`a = 1 + 2 + 3 + \
+    4 + 5 + 6 + \
+    7 + 8
+print(a)
+
+a = (1 + 2 + 3 +      # brackets work too, and look cleaner
+     4 + 5 + 6 +
+     7 + 8)`, o:R`36`},
+    {t:"cell", c:R`a = 10; b = 20; c = 30        # ; puts several statements on one line
+a, b, c = 10, 5.5, "ML"       # multiple assignment
+a = b = c = "AI"              # same value to all three`, o:null, note:"No output: these only assign."},
+    {t:"h", h:"Where a value lives"},
+    {t:"cell", c:R`x = 3
+print(id(x))   # memory address of the object x points to`, o:R`4297636416`, note:"Yours will be a different number. That's normal."},
+  ],
+  quiz: [
+    {q:"Which one is NOT a keyword in Python 3?", opts:["lambda","print","yield","None"], a:1, why:"<code>print</code> is a normal built-in function, so you call it with brackets."},
+    {q:"What does this print?", c:R`a = (1 + 2 +
+     3)
+print(a)`, opts:["6","SyntaxError","(6)"], a:0, why:"Inside brackets a statement can span lines. The brackets just group the maths, so it's <code>6</code>."},
+    {q:"After this, what is c?", c:R`a, b, c = 10, 5.5, "ML"`, opts:["10","5.5","'ML'"], a:2, why:"Values are matched left to right: a=10, b=5.5, c='ML'."},
+  ],
+  cards: [
+    ["What does <code>id(x)</code> give you?", "The memory address (identity) of the object <code>x</code> refers to."],
+    ["Two ways to continue a long statement on the next line?", "End the line with <code>\\</code>, or wrap it in brackets ( ). Brackets are preferred."],
+    ["What marks a block of code in Python?", "Indentation. There are no curly braces."],
+    ["What does <code>a = b = c = \"AI\"</code> do?", "Gives all three names the same value."],
+  ],
+},
+{
+  id: "types", title: "Data types", mins: 6, pages: "p.2–4",
+  tldr: "Everything is an object. type() tells you what it is. The four containers are list, tuple, set and dict.",
+  blocks: [
+    {t:"p", h:"Every value has a type, and every type is a class. <code>type(x)</code> tells you the class. <code>isinstance(x, list)</code> checks whether <code>x</code> is one."},
+    {t:"h", h:"Strings"},
+    {t:"p", h:"A string is a sequence of Unicode characters. Use <code>'single'</code> or <code>\"double\"</code> quotes, or <code>'''triple'''</code> quotes for several lines. Strings can be indexed (people also say <em>subscripted</em>)."},
+    {t:"cell", c:R`s = '''This is Online AI
+course'''
+print(type(s))
+print(s[len(s)-1])     # last character, same as s[-1]
+print(s[5:10])         # slicing: index 5 up to (not including) 10`, o:R`<class 'str'>
+e
+is On`},
+    {t:"h", h:"The four containers"},
+    {t:"table", head:["", "Looks like", "Ordered", "Changeable", "Duplicates", "x[0] works"], rows:[
+      ["<b>list</b>", "<code>[1, 2, 3]</code>", "y", "y", "y", "y"],
+      ["<b>tuple</b>", "<code>(1, 2, 3)</code>", "y", "n", "y", "y"],
+      ["<b>set</b>", "<code>{1, 2, 3}</code>", "n", "y", "n", "n"],
+      ["<b>dict</b>", "<code>{'a': 1}</code>", "y", "y", "keys unique", "by key: d['a']"],
+    ]},
+    {t:"cell", c:R`d = {'a': "apple", 'b': "ball"}
+print(d['a'])`, o:R`apple`},
+    {t:"new", h:"A dict remembers the order you added the keys in. Python has guaranteed this since 3.7."},
+    {t:"h", h:"Converting between types"},
+    {t:"cell", c:R`a = [1, 2, 3]
+print(type(a))
+s = set(a)            # list -> set
+print(type(s))
+print(list("Hello"))  # string -> list of characters
+print(float(5), int(100.5), str(20))`, o:R`<class 'list'>
+<class 'set'>
+['H', 'e', 'l', 'l', 'o']
+5.0 100 20`},
+    {t:"cell", c:R`int('10p')`, o:R`ValueError: invalid literal for int() with base 10: '10p'`, err:true},
+    {t:"warn", h:"Conversion only works if the value makes sense. <code>int()</code> also just chops off decimals: <code>int(100.9)</code> is 100, not 101."},
+  ],
+  quiz: [
+    {q:"Which container removes duplicates automatically?", opts:["list","tuple","set","dict"], a:2, why:"A set keeps only one copy of each value."},
+    {q:"What is int(100.9)?", opts:["101","100","100.9"], a:1, why:"<code>int()</code> cuts off the decimal part. It doesn't round."},
+    {q:"Which line raises an error?", opts:["s = {1, 2}; s[0]","t = (1, 2); t[0]","l = [1, 2]; l[0]"], a:0, why:"Sets have no order, so they have no index. <code>s[0]</code> raises TypeError."},
+  ],
+  cards: [
+    ["Which container is ordered but can't be changed?", "Tuple <code>( )</code>."],
+    ["Which container is unordered and has no duplicates?", "Set <code>{ }</code>."],
+    ["What does <code>list(\"Hi\")</code> return?", "<code>['H', 'i']</code>"],
+    ["<code>type()</code> vs <code>isinstance()</code>?", "<code>type(x)</code> returns the class. <code>isinstance(x, cls)</code> returns True/False."],
+    ["Are dicts ordered in modern Python?", "Yes. They keep insertion order since Python 3.7."],
+  ],
+},
+{
+  id: "io", title: "Printing and input", mins: 4, pages: "p.4–5",
+  tldr: "Use f-strings: f\"Hi {name}\". .format() is the older way. input() always hands you a string.",
+  blocks: [
+    {t:"p", h:"Put an <code>f</code> before the quotes and write any variable or expression inside <code>{ }</code>. This is called an <b>f-string</b>."},
+    {t:"cell", c:R`a = 10; b = 20
+print(f"The value of a is {a} and b is {b}")
+print(f"a + b = {a + b}")              # any expression works
+print(f"Pi is about {3.14159:.2f}")    # :.2f = 2 decimal places
+print(f"{a = }")                       # handy for debugging (3.8+)`, o:R`The value of a is 10 and b is 20
+a + b = 30
+Pi is about 3.14
+a = 10`},
+    {t:"h", h:".format(): the older style you'll still see"},
+    {t:"cell", c:R`a = 10; b = 20
+print("The value of a is {} and b is {}".format(a, b))     # in order
+print("The value of b is {1} and a is {0}".format(a, b))   # by position
+print("Hello {name}, {greeting}".format(name="satish", greeting="Good Morning"))`, o:R`The value of a is 10 and b is 20
+The value of b is 20 and a is 10
+Hello satish, Good Morning`},
+    {t:"cell", c:R`# mix positions and names
+print('The story of {0}, {1}, and {other}'.format('Bill', 'Manfred', other='Georg'))`, o:R`The story of Bill, Manfred, and Georg`},
+    {t:"h", h:"Reading what the user types"},
+    {t:"cell", c:R`num = input("Enter a number: ")
+print(num)`, o:R`Enter a number: 1234
+1234`},
+    {t:"warn", h:"<code>input()</code> always returns a string, even if they type digits. Use <code>int(input(...))</code> when you need a number."},
+  ],
+  quiz: [
+    {q:"What does this print?", c:R`print("{1} and {0}".format("x", "y"))`, opts:["x and y","y and x","{1} and {0}"], a:1, why:"<code>{1}</code> is the second argument (<code>\"y\"</code>), <code>{0}</code> is the first."},
+    {q:"The user types 5. What is type(input())?", opts:["int","str","float"], a:1, why:"<code>input()</code> always returns text."},
+    {q:"name = 'Ana'. Which prints Hi Ana?", opts:["print(f'Hi {name}')","print('Hi {name}')","print(f'Hi name')"], a:0, why:"Only the f-string fills in the variable. Without the <code>f</code> the braces print literally."},
+  ],
+  cards: [
+    ["What does <code>\"{0} {1}\".format('a','b')</code> give?", "<code>'a b'</code>"],
+    ["What type does <code>input()</code> return?", "Always <code>str</code>."],
+    ["Modern replacement for <code>.format()</code>?", "f-strings: <code>f\"Hi {name}\"</code>"],
+  ],
+},
+{
+  id: "ops", title: "Operators", mins: 4, pages: "p.5–6",
+  tldr: "// floors, % gives the remainder, ** is power. 'is' checks same object, 'in' checks membership.",
+  blocks: [
+    {t:"keys", items:[
+      ["%", "Remainder. <code>15 % 2</code> → 1"],
+      ["//", "Floor division. Rounds DOWN. <code>15 // 2</code> → 7"],
+      ["**", "Power. <code>2 ** 3</code> → 8"],
+      ["is / is not", "Are these the same object in memory?"],
+      ["in / not in", "Is this value inside the sequence?"],
+    ]},
+    {t:"cell", c:R`print(15 // 2, -15 // 2, 15 % 2, 2 ** 3)`, o:R`7 -8 1 8`},
+    {t:"warn", h:"// rounds toward minus infinity, so <code>-15 // 2</code> is -8, not -7."},
+    {t:"h", h:"Identity: is"},
+    {t:"cell", c:R`a = 5
+b = 5
+print(a is b)       # both point at the same 5 object
+
+l1 = [1, 2, 3]
+l2 = [1, 2, 3]
+print(l1 is l2)     # two separate lists
+print(l1 == l2)     # ...with equal contents`, o:R`True
+False
+True`},
+    {t:"new", h:"<code>a is b</code> is True for 5 only because Python reuses small numbers and short strings to save memory. Don't rely on it. Use <code>==</code> to compare values, and keep <code>is</code> for <code>x is None</code>."},
+    {t:"h", h:"Membership: in"},
+    {t:"cell", c:R`lst = [1, 2, 3, 4]
+print(1 in lst, 5 in lst)
+
+d = {1: "a", 2: "b"}
+print(1 in d, "a" in d)`, o:R`True False
+True False`},
+    {t:"warn", h:"<code>in</code> on a dict only checks the keys. For values use <code>\"a\" in d.values()</code>."},
+  ],
+  quiz: [
+    {q:"What is -7 // 2?", opts:["-3","-4","-3.5"], a:1, why:"-3.5 rounded down (toward minus infinity) is -4."},
+    {q:"What is [1] is [1]?", opts:["True","False"], a:1, why:"Each <code>[1]</code> creates a new list, so they are different objects. <code>==</code> would be True."},
+    {q:"What is 'b' in {'a': 'b'}?", opts:["True","False"], a:1, why:"Only keys are checked. <code>'b'</code> is a value."},
+    {q:"What is 17 % 5?", opts:["3","2","3.4"], a:1, why:"17 = 5×3 + 2. The remainder is 2."},
+  ],
+  cards: [
+    ["<code>-15 // 2</code>?", "<code>-8</code> (floor division rounds down)"],
+    ["<code>is</code> vs <code>==</code>?", "<code>is</code>: same object in memory. <code>==</code>: equal values."],
+    ["Does <code>in</code> on a dict check keys or values?", "Keys only."],
+    ["What does <code>%</code> do?", "Gives the remainder after division."],
+  ],
+},
+{
+  id: "flow", title: "If, loops, break", mins: 7, pages: "p.6–8",
+  tldr: "if/elif/else picks a path. for walks through things, while repeats. break leaves the loop, continue skips ahead.",
+  blocks: [
+    {t:"h", h:"if / elif / else"},
+    {t:"p", h:"Anything can go after <code>if</code>. These count as False: <code>0</code>, <code>None</code>, <code>False</code>, and anything empty (<code>\"\"</code>, <code>[]</code>, <code>{}</code>). Everything else counts as True."},
+    {t:"cell", c:R`if -1:
+    print("Number is positive")
+print("This will print always")`, o:R`Number is positive
+This will print always`, note:"-1 isn't 0, so it counts as True. Try 0 or None in your head."},
+    {t:"cell", c:R`num = 0
+if num > 0:
+    print("positive")
+elif num == 0:
+    print("zero")
+else:
+    print("negative")`, o:R`zero`},
+    {t:"h", h:"range(): a sequence of numbers"},
+    {t:"p", h:"<code>range(stop)</code> or <code>range(start, stop, step)</code>. The stop number is never included. Step defaults to 1."},
+    {t:"cell", c:R`print(list(range(10)))
+print(list(range(1, 20, 2)))`, o:R`[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+[1, 3, 5, 7, 9, 11, 13, 15, 17, 19]`},
+    {t:"h", h:"for loops"},
+    {t:"cell", c:R`lst = [10, 20, 30, 40, 50]
+product = 1
+for item in lst:              # or: for index in range(len(lst)):
+    product *= item           #         product *= lst[index]
+print(f"product is {product}")`, o:R`product is 12000000`},
+    {t:"h", h:"while loops (and loop else)"},
+    {t:"cell", c:R`n = 3
+while n > 0:
+    print(n)
+    n -= 1
+else:
+    print("done")`, o:R`3
+2
+1
+done`},
+    {t:"h", h:"break and continue"},
+    {t:"keys", items:[["break","Leave the loop completely."],["continue","Skip the rest of this round, go to the next one."]]},
+    {t:"cell", c:R`numbers = [1, 2, 3, 4]
+for num in numbers:
+    if num == 4:
+        break
+    print(num)
+else:
+    print("in the else-block")
+print("Outside of for loop")`, o:R`1
+2
+3
+Outside of for loop`},
+    {t:"cell", c:R`numbers = [1, 2, 3, 4, 5]
+for num in numbers:
+    if num % 2 == 0:
+        continue
+    print(num)
+else:
+    print("else-block")`, o:R`1
+3
+5
+else-block`},
+    {t:"warn", h:"A loop's <code>else</code> runs only if the loop finished without hitting <code>break</code>."},
+  ],
+  quiz: [
+    {q:"What is list(range(2, 10, 3))?", opts:["[2, 5, 8]","[2, 5, 8, 11]","[3, 6, 9]"], a:0, why:"Start at 2, add 3 each time, stop before 10."},
+    {q:"What is printed last?", c:R`for x in [1, 2, 3]:
+    if x == 2:
+        break
+else:
+    print("A")
+print("B")`, opts:["A","B","A then B"], a:1, why:"The loop hit <code>break</code>, so <code>else</code> is skipped. Only B prints."},
+    {q:"Which one is truthy?", opts:["[]","0","\"0\"","None"], a:2, why:"<code>\"0\"</code> is a non-empty string, so it counts as True."},
+  ],
+  cards: [
+    ["Which values count as False?", "<code>0</code>, <code>None</code>, <code>False</code>, and empty things like <code>\"\"</code>, <code>[]</code>, <code>{}</code>."],
+    ["<code>range(1, 10, 2)</code> gives?", "1, 3, 5, 7, 9 (stop is not included)"],
+    ["break vs continue?", "break leaves the loop. continue jumps to the next round."],
+    ["When does a loop's <code>else</code> run?", "Only when the loop ends without a <code>break</code>."],
+  ],
+},
+{
+  id: "lists", title: "Lists", mins: 8, pages: "p.8–12",
+  tldr: "A list is an ordered, changeable row of items. Know append vs extend, sort vs sorted, and that b = a does not copy.",
+  blocks: [
+    {t:"cell", c:R`emptyList = []
+lst  = ['one', 'two', 'three', 'four']   # strings
+lst2 = [1, 2, 3, 4]                      # integers
+lst3 = [[1, 2], [3, 4]]                  # list of lists
+lst4 = [1, 'ramu', 24, 1.24]             # mixed types`, o:null},
+    {t:"h", h:"The methods you'll use"},
+    {t:"keys", items:[
+      ["len(lst)","How many items."],
+      ["lst.append(x)","Add x at the end."],
+      ["lst.insert(2, x)","Put x at position 2."],
+      ["lst.extend(lst2)","Add each item of lst2 at the end."],
+      ["lst.remove(x)","Delete the first x found."],
+      ["del lst[1]","Delete by position."],
+      ["lst.pop(1)","Delete by position and give it back to you."],
+      ["lst.reverse()","Flip the order in place."],
+      ["lst.sort()","Sort in place (changes lst)."],
+      ["sorted(lst)","Return a new sorted list. lst is untouched."],
+      ["lst.count(x)","How many times x appears."],
+    ]},
+    {t:"cell", c:R`a = [1, 2]
+a.append([3, 4])     # adds ONE item: the whole list
+print(a)
+
+b = [1, 2]
+b.extend([3, 4])     # adds each item
+print(b)`, o:R`[1, 2, [3, 4]]
+[1, 2, 3, 4]`},
+    {t:"new", h:"Remember it this way: <b>append nests</b>, <b>extend flattens</b>. Also, <code>pop()</code> returns the removed item and <code>del</code> doesn't."},
+    {t:"cell", c:R`nums = [3, 1, 2]
+print(sorted(nums))       # new list
+print(nums)               # unchanged
+nums.sort(reverse=True)   # changes nums
+print(nums)`, o:R`[1, 2, 3]
+[3, 1, 2]
+[3, 2, 1]`},
+    {t:"h", h:"Two names, one list"},
+    {t:"cell", c:R`lst = [1, 2, 3, 4, 5]
+abc = lst
+abc.append(6)
+print("Original list:", lst)`, o:R`Original list: [1, 2, 3, 4, 5, 6]`},
+    {t:"warn", h:"<code>abc = lst</code> doesn't copy. Both names point at the same list. Use <code>lst.copy()</code> or <code>lst[:]</code> for a real copy."},
+    {t:"h", h:"Split a string into a list"},
+    {t:"cell", c:R`print("one,two,three,four,five".split(','))
+print("This is applied AI Course".split())   # default: split on spaces/tabs`, o:R`['one', 'two', 'three', 'four', 'five']
+['This', 'is', 'applied', 'AI', 'Course']`},
+    {t:"h", h:"Slicing: [start : end : step]"},
+    {t:"cell", c:R`numbers = [10, 20, 30, 40, 50, 60, 70, 80]
+print(numbers[:])      # everything
+print(numbers[0:4])    # index 0 to 3
+print(numbers[::2])    # every 2nd
+print(numbers[2::2])   # from index 2, every 2nd
+print(numbers[::-1])   # reversed`, o:R`[10, 20, 30, 40, 50, 60, 70, 80]
+[10, 20, 30, 40]
+[10, 30, 50, 70]
+[30, 50, 70]
+[80, 70, 60, 50, 40, 30, 20, 10]`},
+    {t:"cell", c:R`lst1 = [1, 2, 3, 4]
+lst2 = ['varma', 'naveen', 'murali', 'brahma']
+print(lst1 + lst2)                      # join with +
+print([1, 2, 3, 1, 3, 4, 2, 5].count(1))`, o:R`[1, 2, 3, 4, 'varma', 'naveen', 'murali', 'brahma']
+2`},
+    {t:"h", h:"List comprehension"},
+    {t:"p", h:"A one-line way to build a new list from another: <code>[what for item in things if condition]</code>."},
+    {t:"cell", c:R`squares = []
+for i in range(10):
+    squares.append(i**2)          # the long way
+
+squares = [i**2 for i in range(10)]   # same thing, one line
+print(squares)
+
+lst = [-10, -20, 10, 20, 50]
+print([i*2 for i in lst])              # double each
+print([i for i in lst if i >= 0])      # keep non-negatives
+print([(i, i**2) for i in range(4)])   # list of tuples`, o:R`[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+[-20, -40, 20, 40, 100]
+[10, 20, 50]
+[(0, 0), (1, 1), (2, 4), (3, 9)]`},
+    {t:"cell", c:R`matrix = [[1, 2, 3, 4],
+          [5, 6, 7, 8],
+          [9, 10, 11, 12]]
+
+# transpose: rows become columns
+transposed = [[row[i] for row in matrix] for i in range(4)]
+print(transposed)`, o:R`[[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]`, note:"Read it inside-out: for each column i, collect row[i] from every row."},
+  ],
+  quiz: [
+    {q:"What is len(a)?", c:R`a = [1, 2]
+a.append([3, 4])`, opts:["2","3","4"], a:1, why:"append adds the whole list as one item: <code>[1, 2, [3, 4]]</code>."},
+    {q:"What is printed?", c:R`a = [1, 2, 3]
+b = a
+b.append(4)
+print(len(a))`, opts:["3","4"], a:1, why:"a and b are the same list, so a changed too."},
+    {q:"[10, 20, 30, 40][1:3]?", opts:["[10, 20, 30]","[20, 30]","[20, 30, 40]"], a:1, why:"Start at index 1, stop before index 3."},
+    {q:"[x for x in range(6) if x % 2]?", opts:["[0, 2, 4]","[1, 3, 5]","[1, 2, 3, 4, 5]"], a:1, why:"<code>x % 2</code> is 1 (truthy) for odd numbers."},
+  ],
+  cards: [
+    ["append vs extend?", "append adds one item (nests a list). extend adds each item (flattens)."],
+    ["sort() vs sorted()?", "<code>lst.sort()</code> changes the list. <code>sorted(lst)</code> returns a new one."],
+    ["Does <code>b = a</code> copy a list?", "No, both names share it. Use <code>a.copy()</code> or <code>a[:]</code>."],
+    ["Reverse a list with slicing?", "<code>lst[::-1]</code>"],
+    ["Squares 0–9 as a comprehension?", "<code>[i**2 for i in range(10)]</code>"],
+    ["pop(1) vs del lst[1]?", "Both remove index 1. pop also returns the removed item."],
+  ],
+},
+{
+  id: "tuples", title: "Tuples", mins: 5, pages: "p.12–16",
+  tldr: "A tuple is a list you can't change. One-item tuples need a trailing comma.",
+  blocks: [
+    {t:"cell", c:R`t = ()                                   # empty
+t = (1, 2, 3)                            # integers
+t = (1, 'raju', 28, 'abc')               # mixed
+t = (1, (2, 3, 4), [1, 'raju', 28, 'abc'])   # nested
+print(t)`, o:R`(1, (2, 3, 4), [1, 'raju', 28, 'abc'])`},
+    {t:"cell", c:R`print(type(('satish')))     # just brackets around a string
+print(type(('satish',)))    # the comma makes it a tuple
+t = "satish",               # brackets are optional
+print(t)`, o:R`<class 'str'>
+<class 'tuple'>
+('satish',)`},
+    {t:"warn", h:"It's the comma that makes a tuple, not the brackets."},
+    {t:"cell", c:R`t = (1, 2, 3, 4, 5, 6)
+print(t[1:4])    # slicing works like lists
+print(t[:-2])
+print(t[:])`, o:R`(2, 3, 4)
+(1, 2, 3, 4)
+(1, 2, 3, 4, 5, 6)`},
+    {t:"h", h:"You can't change a tuple…"},
+    {t:"cell", c:R`t = (1, 2, 3, 4, [5, 6, 7])
+t[2] = 'x'`, o:R`TypeError: 'tuple' object does not support item assignment`, err:true},
+    {t:"cell", c:R`t[4][1] = 'satish'    # ...but a list INSIDE it can change
+print(t)`, o:R`(1, 2, 3, 4, [5, 'satish', 7])`},
+    {t:"h", h:"What you can do"},
+    {t:"cell", c:R`print((1, 2, 3) + (4, 5, 6))    # join
+print(('satish',) * 4)           # repeat
+
+t = (1, 2, 3, 1, 3, 3, 4, 1)
+print(t.count(1))     # how many 1s
+print(t.index(3))     # position of the first 3
+print(1 in t, 7 in t)
+print(len(t))
+
+t = (4, 5, 1, 2, 3)
+print(sorted(t))      # gives back a LIST
+print(max(t), min(t), sum(t))
+
+del t                 # deletes the whole tuple; you can't delete single items`, o:R`(1, 2, 3, 4, 5, 6)
+('satish', 'satish', 'satish', 'satish')
+3
+2
+True False
+8
+[1, 2, 3, 4, 5]
+5 1 15`},
+  ],
+  quiz: [
+    {q:"What is type((5))?", opts:["tuple","int"], a:1, why:"No comma, so the brackets are just grouping. <code>(5,)</code> would be a tuple."},
+    {q:"(1, 2) + (3,)?", opts:["(1, 2, 3)","(4, 2)","TypeError"], a:0, why:"<code>+</code> joins tuples into a new one."},
+    {q:"What type does sorted((3, 1, 2)) return?", opts:["tuple","list"], a:1, why:"<code>sorted()</code> always returns a list."},
+    {q:"t = (1, [2, 3]). Which line works?", opts:["t[0] = 9","t[1].append(4)","del t[0]"], a:1, why:"The tuple can't change, but the list inside it can."},
+  ],
+  cards: [
+    ["How do you make a one-item tuple?", "Add a trailing comma: <code>('satish',)</code>"],
+    ["Can you change an item in a tuple?", "No, TypeError. A mutable item inside it (like a list) can still change."],
+    ["<code>t.index(3)</code> returns?", "The position of the first 3."],
+    ["What does <code>sorted(tuple)</code> return?", "A new list."],
+  ],
+},
+{
+  id: "sets", title: "Sets", mins: 6, pages: "p.16–20",
+  tldr: "A set is a bag of unique items with no order. Great for removing duplicates and for union and intersection.",
+  blocks: [
+    {t:"cell", c:R`s = {1, 2, 3, 1, 4}
+print(s)                    # duplicates vanish
+print(set([1, 2, 3, 1]))    # from a list
+s = set()                   # empty set
+print(type(s))`, o:R`{1, 2, 3, 4}
+{1, 2, 3}
+<class 'set'>`},
+    {t:"warn", h:"<code>{}</code> is an empty dict, not an empty set. Use <code>set()</code>."},
+    {t:"h", h:"Adding and removing"},
+    {t:"cell", c:R`s = {1, 3}
+s.add(2)                       # one item
+s.update([5, 6, 1])            # many items
+s.update([8, 9], {10, 2, 3})   # lists and sets together
+print(s)`, o:R`{1, 2, 3, 5, 6, 8, 9, 10}`},
+    {t:"cell", c:R`s = {1, 2, 3, 5, 4}
+s.discard(4)     # remove 4
+s.remove(2)      # remove 2
+s.discard(7)     # 7 isn't there: no problem
+print(s)
+s.remove(7)      # 7 isn't there: error!`, o:R`{1, 3, 5}
+KeyError: 7`, err:true},
+    {t:"warn", h:"<code>remove</code> complains if the item is missing. <code>discard</code> stays quiet."},
+    {t:"cell", c:R`s = {1, 2, 3, 5, 4}
+s.pop()          # removes some item (you don't pick which)
+s.clear()        # removes everything`, o:null},
+    {t:"h", h:"Set maths"},
+    {t:"cell", c:R`set1 = {1, 2, 3, 4, 5}
+set2 = {3, 4, 5, 6, 7}
+
+print(set1 | set2)   # union          (set1.union(set2))
+print(set1 & set2)   # intersection   (set1.intersection(set2))
+print(set1 - set2)   # only in set1   (set1.difference(set2))
+print(set1 ^ set2)   # in one, not both (set1.symmetric_difference(set2))`, o:R`{1, 2, 3, 4, 5, 6, 7}
+{3, 4, 5}
+{1, 2}
+{1, 2, 6, 7}`},
+    {t:"cell", c:R`x = {"a", "b", "c", "d", "e"}
+y = {"c", "d"}
+print(x.issubset(y), y.issubset(x))`, o:R`False True`},
+    {t:"h", h:"Frozen sets"},
+    {t:"p", h:"A <code>frozenset</code> is a set you can't change. Your margin note says it best: <b>tuple is to list as frozenset is to set</b>. Because it can't change, it's <em>hashable</em>, so it can be a dictionary key. A normal set can't."},
+    {t:"cell", c:R`set1 = frozenset([1, 2, 3, 4])
+set2 = frozenset([3, 4, 5, 6])
+print(set1 & set2)
+set1.add(9)`, o:R`frozenset({3, 4})
+AttributeError: 'frozenset' object has no attribute 'add'`, err:true},
+  ],
+  quiz: [
+    {q:"What is type({})?", opts:["set","dict"], a:1, why:"Empty braces make a dict. An empty set is <code>set()</code>."},
+    {q:"{1, 2, 3} - {2}?", opts:["{1, 3}","{2}","{1, 2, 3}"], a:0, why:"Difference keeps what's only in the first set."},
+    {q:"{1, 2} ^ {2, 3}?", opts:["{2}","{1, 3}","{1, 2, 3}"], a:1, why:"Symmetric difference keeps items in exactly one of the sets."},
+    {q:"s = {1}. What does s.remove(99) do?", opts:["Nothing","KeyError","Returns None"], a:1, why:"<code>remove</code> raises KeyError for a missing item. <code>discard</code> wouldn't."},
+  ],
+  cards: [
+    ["How do you make an empty set?", "<code>set()</code>. <code>{}</code> is an empty dict."],
+    ["remove vs discard?", "remove raises KeyError if the item is missing. discard does nothing."],
+    ["| & - ^ on sets?", "Union, intersection, difference, symmetric difference."],
+    ["What is a frozenset?", "An unchangeable set. Hashable, so it can be a dict key."],
+    ["Quickest way to remove duplicates from a list?", "<code>list(set(lst))</code> (order isn't kept)"],
+  ],
+},
+{
+  id: "dicts", title: "Dictionaries", mins: 6, pages: "p.20–23",
+  tldr: "A dict maps keys to values, like a lookup table. Use .get() when a key might be missing.",
+  blocks: [
+    {t:"p", h:"A dictionary stores <code>key: value</code> pairs. It's a hash table underneath, which is why looking up a key is very fast."},
+    {t:"cell", c:R`my_dict = {}                                      # empty
+my_dict = {1: 'abc', 2: 'xyz'}                    # integer keys
+my_dict = {'name': 'satish', 1: ['abc', 'xyz']}   # mixed keys
+my_dict = dict([(1, 'abc'), (2, 'xyz')])          # from a list of tuples
+print(my_dict)`, o:R`{1: 'abc', 2: 'xyz'}`},
+    {t:"h", h:"Reading values"},
+    {t:"cell", c:R`my_dict = {'name': 'satish', 'age': 27, 'address': 'guntur'}
+print(my_dict['name'])
+print(my_dict.get('address'))
+print(my_dict.get('degree'))     # missing key -> None
+print(my_dict['degree'])         # missing key -> error`, o:R`satish
+guntur
+None
+KeyError: 'degree'`, err:true},
+    {t:"h", h:"Changing and removing"},
+    {t:"cell", c:R`my_dict = {'name': 'satish', 'age': 27, 'address': 'guntur'}
+my_dict['degree'] = 'MTech'      # add a new key
+my_dict['age'] = 28              # change a value
+print(my_dict.pop('age'))        # remove a key, get its value back
+my_dict.popitem()                # remove the last pair added
+print(my_dict)`, o:R`28
+{'name': 'satish', 'address': 'guntur'}`},
+    {t:"new", h:"<code>popitem()</code> always removes the pair you added most recently. To merge two dicts, write <code>d1 | d2</code> (Python 3.9+)."},
+    {t:"h", h:"Useful methods"},
+    {t:"cell", c:R`squares = {2: 4, 3: 9, 4: 16, 5: 25}
+copy = squares.copy()
+print(squares.items())
+print(squares.keys())
+print(squares.values())
+print({}.fromkeys(['Math', 'English', 'Hindi'], 0))`, o:R`dict_items([(2, 4), (3, 9), (4, 16), (5, 25)])
+dict_keys([2, 3, 4, 5])
+dict_values([4, 9, 16, 25])
+{'Math': 0, 'English': 0, 'Hindi': 0}`, note:"dir(d) lists every method a dict has."},
+    {t:"h", h:"Dict comprehension"},
+    {t:"cell", c:R`d = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+for pair in d.items():
+    print(pair)
+
+print({k: v for k, v in d.items() if v > 2})`, o:R`('a', 1)
+('b', 2)
+('c', 3)
+('d', 4)
+{'c': 3, 'd': 4}`},
+    {t:"cell", c:R`d = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}
+print({k + 'c': v * 2 for k, v in d.items() if v > 2})`, o:R`{'cc': 6, 'dc': 8, 'ec': 10}`},
+  ],
+  quiz: [
+    {q:"d = {'a': 1}. What is d.get('x')?", opts:["KeyError","None","0"], a:1, why:"<code>.get()</code> returns None for a missing key instead of raising an error."},
+    {q:"{}.fromkeys(['a', 'b'], 0)?", opts:["{'a': 0, 'b': 0}","{0: ['a', 'b']}","['a', 'b']"], a:0, why:"Each key from the list gets the value 0."},
+    {q:"What is printed?", c:R`d = {'a': 1}
+d['a'] = 5
+d['b'] = 2
+print(len(d))`, opts:["2","3"], a:0, why:"Assigning to an existing key replaces its value. Only 'b' is new."},
+    {q:"{k: v for k, v in {'x': 1, 'y': 5}.items() if v > 2}?", opts:["{'y': 5}","{'x': 1}","{5}"], a:0, why:"Only pairs where the value is above 2 stay."},
+  ],
+  cards: [
+    ["<code>d['k']</code> vs <code>d.get('k')</code> for a missing key?", "<code>d['k']</code> raises KeyError. <code>.get</code> returns None."],
+    ["What do .items(), .keys(), .values() return?", "Views of the (key, value) pairs, the keys, and the values."],
+    ["What does <code>d.pop('age')</code> return?", "The value that was stored under 'age'."],
+    ["Dict comprehension syntax?", "<code>{k: v for k, v in d.items() if ...}</code>"],
+    ["Why are dict lookups fast?", "A dict is a hash table."],
+  ],
+},
+{
+  id: "strings", title: "Strings", mins: 5, pages: "p.23–26",
+  tldr: "Strings index and slice like lists but can't be changed. Know split, join, find, replace, lower and upper.",
+  blocks: [
+    {t:"p", h:"Computers only store numbers. Turning characters into numbers is <b>encoding</b>, and turning them back is <b>decoding</b>. ASCII and Unicode are two encodings. A Python string is a sequence of Unicode characters."},
+    {t:"cell", c:R`myString = "Hello"
+print(myString[0])      # first
+print(myString[-1])     # last
+print(myString[2:5])    # 2nd to 5th`, o:R`H
+o
+llo`},
+    {t:"cell", c:R`myString[4] = 's'`, o:R`TypeError: 'str' object does not support item assignment`, err:true},
+    {t:"warn", h:"Strings can't be changed in place. Make a new one, or reassign the name. <code>del myString</code> deletes the whole thing, and using it afterwards gives NameError."},
+    {t:"cell", c:R`s1 = "Hello "
+s2 = "Satish"
+print(s1 + s2)      # join
+print(s1 * 3)       # repeat
+
+count = 0
+for l in "Hello World":
+    if l == 'o':
+        count += 1
+print(count, 'letters found')
+
+print('l' in 'Hello World', 'or' in 'Hello World')`, o:R`Hello Satish
+Hello Hello Hello
+2 letters found
+True True`},
+    {t:"h", h:"String methods"},
+    {t:"cell", c:R`print("Hello".lower(), "Hello".upper())
+words = "This will split all words in a list".split()
+print(words)
+print(' '.join(words))
+print("Good Morning".find("Mo"))           # index where it starts
+print("Bad Morning".replace("Bad", "Good"))`, o:R`hello HELLO
+['This', 'will', 'split', 'all', 'words', 'in', 'a', 'list']
+This will split all words in a list
+5
+Good Morning`},
+    {t:"h", h:"Two classic programs"},
+    {t:"cell", c:R`myStr = "MadaM".lower()
+revStr = reversed(myStr)
+if list(myStr) == list(revStr):     # shorter: myStr == myStr[::-1]
+    print("Given String is palindrome")
+else:
+    print("Given String is not palindrome")`, o:R`Given String is palindrome`},
+    {t:"cell", c:R`words = "python Program to Sort words in Alphabetic Order".split()
+words.sort()
+print(words)`, o:R`['Alphabetic', 'Order', 'Program', 'Sort', 'in', 'python', 'to', 'words']`},
+    {t:"warn", h:"Capital letters sort before lowercase ones. Use <code>words.sort(key=str.lower)</code> for a dictionary-style order."},
+  ],
+  quiz: [
+    {q:"\"Good Morning\".find(\"Mo\")?", opts:["4","5","6"], a:1, why:"G-o-o-d-space is 0–4, so 'M' is at index 5."},
+    {q:"\"-\".join([\"a\", \"b\", \"c\"])?", opts:["a-b-c","-a-b-c-","['a-b-c']"], a:0, why:"join puts the separator between items only."},
+    {q:"\"abc\"[::-1]?", opts:["cba","abc","c"], a:0, why:"A step of -1 walks backwards."},
+    {q:"sorted([\"b\", \"A\", \"a\"])?", opts:["['a', 'A', 'b']","['A', 'a', 'b']","['A', 'b', 'a']"], a:1, why:"Uppercase letters come before lowercase in Unicode order."},
+  ],
+  cards: [
+    ["Are strings changeable?", "No. They're immutable. Build a new string instead."],
+    ["split vs join?", "<code>s.split()</code>: string → list. <code>' '.join(lst)</code>: list → string."],
+    ["Check for a palindrome in one line?", "<code>s == s[::-1]</code>"],
+    ["What does <code>.find()</code> return?", "The index where the text starts (or -1 if not found)."],
+    ["Encoding vs decoding?", "Encoding: characters → numbers. Decoding: numbers → characters."],
+  ],
+},
+{
+  id: "functions", title: "Functions", mins: 8, pages: "p.26–31",
+  tldr: "def name(params): docstring, body, return. Defaults fill in missing args, *args collects extras into a tuple, **kwargs into a dict.",
+  blocks: [
+    {t:"cell", c:R`def function_name(parameters):
+    """Doc string"""
+    statement(s)`, o:null},
+    {t:"keys", items:[
+      ["def","Starts the function header."],
+      ["parameters","The values you pass in. Optional."],
+      [":","Ends the header."],
+      ["\"\"\"docstring\"\"\"","Says what the function does. Optional but good practice."],
+      ["return","Sends a value back. Optional. Without it you get None."],
+    ]},
+    {t:"cell", c:R`def print_name(name):
+    """This function prints the name"""
+    print("Hello " + str(name))
+
+print_name('satish')
+print(print_name.__doc__)`, o:R`Hello satish
+This function prints the name`},
+    {t:"cell", c:R`def computeHCF(a, b):
+    """Computing HCF of two numbers"""
+    smaller = b if a > b else a      # one-line if/else
+    hcf = 1
+    for i in range(1, smaller + 1):
+        if (a % i == 0) and (b % i == 0):
+            hcf = i
+    return hcf
+
+print(f"H.C.F of 98 and 78 is: {computeHCF(98, 78)}")`, o:R`H.C.F of 98 and 78 is: 2`},
+    {t:"h", h:"Default arguments"},
+    {t:"cell", c:R`def greet(name, msg="Good Morning"):
+    print(f"Hello {name}, {msg}")
+
+greet("satish", "Good Night")
+greet("satish")                  # msg falls back to the default`, o:R`Hello satish, Good Night
+Hello satish, Good Morning`},
+    {t:"h", h:"**kwargs: any number of named arguments"},
+    {t:"cell", c:R`def greet(**kwargs):
+    if kwargs:                   # kwargs is a dict
+        print(f"Hello {kwargs['name']}, {kwargs['msg']}")
+
+greet(name="satish", msg="Good Morning")`, o:R`Hello satish, Good Morning`},
+    {t:"h", h:"*args: any number of plain arguments"},
+    {t:"cell", c:R`def greet(*names):
+    print(names)                 # names is a tuple
+    for name in names:
+        print("Hello,", name)
+
+greet("satish", "murali", "naveen", "srikanth")`, o:R`('satish', 'murali', 'naveen', 'srikanth')
+Hello, satish
+Hello, murali
+Hello, naveen
+Hello, srikanth`},
+    {t:"h", h:"Recursion: a function that calls itself"},
+    {t:"cell", c:R`def factorial(num):
+    """Recursive factorial"""
+    return 1 if num <= 1 else num * factorial(num - 1)
+
+print(f"Factorial of 5 is {factorial(5)}")
+
+def fibonacci(num):
+    return num if num <= 1 else fibonacci(num - 1) + fibonacci(num - 2)
+
+print([fibonacci(n) for n in range(10)])`, o:R`Factorial of 5 is 120
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]`},
+    {t:"warn", h:"Every recursive function needs a stopping case (here <code>num &lt;= 1</code>). Without one it calls itself until Python raises RecursionError."},
+  ],
+  quiz: [
+    {q:"What is printed?", c:R`def greet(name, msg="Hi"):
+    print(msg, name)
+
+greet("Ana")`, opts:["Ana","Hi Ana","TypeError"], a:1, why:"msg wasn't passed, so it uses the default \"Hi\"."},
+    {q:"What does f(1, 2, 3) return?", c:R`def f(*a):
+    return len(a)`, opts:["1","3","(1, 2, 3)"], a:1, why:"*a collects all three into a tuple of length 3."},
+    {q:"Inside def f(**kw), what type is kw?", opts:["tuple","list","dict"], a:2, why:"**kwargs collects named arguments into a dict."},
+    {q:"A function with no return statement returns…", opts:["0","None","an error"], a:1, why:"Python returns None automatically."},
+  ],
+  cards: [
+    ["What are the 5 parts of a function?", "<code>def</code>, parameters, <code>:</code>, docstring, <code>return</code>."],
+    ["How do you read a function's docstring?", "<code>func.__doc__</code>"],
+    ["*args vs **kwargs?", "*args: extra positional args as a tuple. **kwargs: extra named args as a dict."],
+    ["One-line if/else?", "<code>x = a if condition else b</code>"],
+    ["What must every recursive function have?", "A base case that stops it."],
+  ],
+},
+{
+  id: "builtins", title: "Built-ins and lambda", mins: 6, pages: "p.28–33",
+  tldr: "map transforms every item, filter keeps some, reduce rolls them into one value. lambda is a tiny nameless function to pass to them.",
+  blocks: [
+    {t:"keys", items:[
+      ["divmod(a, b)","(quotient, remainder) as a tuple."],
+      ["enumerate(x)","Pairs each item with its index."],
+      ["isinstance(o, cls)","Is o of type cls? True/False."],
+      ["filter(f, x)","Keep items where f(item) is True."],
+      ["map(f, x)","Apply f to every item."],
+      ["reduce(f, x)","Combine items pair by pair into one value."],
+    ]},
+    {t:"cell", c:R`print(divmod(9, 2))
+
+for index, num in enumerate([10, 20, 30, 40]):
+    print(f"index {index} has value {num}")
+
+print(isinstance([1, 2, 3, 4], list), isinstance((1, 2, 3, 4), list))`, o:R`(4, 1)
+index 0 has value 10
+index 1 has value 20
+index 2 has value 30
+index 3 has value 40
+True False`},
+    {t:"h", h:"filter, map, reduce"},
+    {t:"cell", c:R`def find_positive_number(num):
+    if num > 0:
+        return num
+
+print(list(filter(find_positive_number, range(-10, 10))))
+
+def powerOfTwo(num):
+    return num ** 2
+
+print(list(map(powerOfTwo, [1, 2, 3, 4])))
+
+from functools import reduce        # Python 3 moved it here
+def multiply(x, y):
+    return x * y
+
+print(reduce(multiply, [1, 2, 3, 4]))   # ((1*2)*3)*4`, o:R`[1, 2, 3, 4, 5, 6, 7, 8, 9]
+[1, 4, 9, 16]
+24`},
+    {t:"new", h:"<code>map</code> and <code>filter</code> are lazy: they only work when you ask for the items. Wrap them in <code>list()</code> to see the result. A comprehension often reads better: <code>[n**2 for n in nums]</code>."},
+    {t:"h", h:"lambda: a function without a name"},
+    {t:"p", h:"Syntax: <code>lambda arguments: expression</code>. Use it for short throwaway functions, usually handed straight to filter, map or reduce."},
+    {t:"cell", c:R`double = lambda x: x * 2      # same as def double(x): return x * 2
+print(double(5))
+
+lst = [1, 2, 3, 4, 5]
+print(list(filter(lambda x: x % 2 == 0, lst)))   # even numbers
+print(list(map(lambda x: x ** 2, lst)))          # squares
+print(reduce(lambda x, y: x * y, lst))           # product`, o:R`10
+[2, 4]
+[1, 4, 9, 16, 25]
+120`},
+  ],
+  quiz: [
+    {q:"list(map(lambda x: x + 1, [1, 2]))?", opts:["[2, 3]","[1, 2, 1]","3"], a:0, why:"map applies +1 to each item."},
+    {q:"reduce(lambda x, y: x + y, [1, 2, 3, 4])?", opts:["10","24","[1, 3, 6, 10]"], a:0, why:"((1+2)+3)+4 = 10."},
+    {q:"divmod(17, 5)?", opts:["(3, 2)","(2, 3)","3.4"], a:0, why:"17 // 5 = 3 and 17 % 5 = 2."},
+    {q:"list(filter(lambda x: x > 2, [1, 5, 2, 8]))?", opts:["[5, 8]","[True, False]","[1, 2]"], a:0, why:"filter keeps items where the function returns True."},
+  ],
+  cards: [
+    ["map vs filter vs reduce?", "map: change every item. filter: keep some items. reduce: combine all into one."],
+    ["Where does reduce live in Python 3?", "<code>from functools import reduce</code>"],
+    ["lambda syntax?", "<code>lambda args: expression</code>"],
+    ["What does enumerate give you?", "(index, item) pairs."],
+    ["<code>divmod(9, 2)</code>?", "<code>(4, 1)</code>"],
+  ],
+},
+{
+  id: "modules", title: "Modules and packages", mins: 4, pages: "p.33–36",
+  tldr: "A module is a .py file. A package is a folder of modules with an __init__.py. import brings them in.",
+  blocks: [
+    {t:"p", h:"A file like <code>example.py</code> is a module called <code>example</code>. Modules split big programs into small files and let you reuse code instead of copying it."},
+    {t:"cell", c:R`import example            # your own file, example.py
+print(example.add(10, 20))
+
+import math
+print(math.pi)
+
+import math as m          # rename it
+print(m.pi)`, o:R`30
+3.141592653589793
+3.141592653589793`},
+    {t:"cell", c:R`from datetime import datetime    # just one name from the module
+print(datetime.now())
+
+from math import *               # every name
+print(f"Value of PI is {pi}")`, o:R`2026-10-01 09:15:42.606228
+Value of PI is 3.141592653589793`},
+    {t:"warn", h:"<code>from x import *</code> pours every name into your file and can silently overwrite your own. Name what you need instead."},
+    {t:"cell", c:R`print(dir(example))          # names defined in the module
+print(example.add.__doc__)`, o:R`['__builtins__', '__cached__', '__doc__', ..., 'add']
+This program adds two numbers and return the result`},
+    {t:"h", h:"Packages"},
+    {t:"p", h:"A package is a folder of modules, reached with dotted names. The folder needs an <code>__init__.py</code> file (often empty) for Python to treat it as a package."},
+    {t:"tree", h:R`Game/                  ← package
+├── __init__.py
+├── Sound/             ← sub-package
+│   ├── __init__.py
+│   ├── load.py        ← module
+│   ├── play.py
+│   └── pause.py
+├── Image/
+│   ├── __init__.py
+│   ├── open.py
+│   ├── change.py
+│   └── close.py
+└── Level/
+    ├── __init__.py
+    ├── start.py
+    ├── load.py
+    └── over.py
+
+import Game.Image.open     # package . sub-package . module`},
+    {t:"new", h:"The file name has two underscores on each side: <code>__init__.py</code>. Python 3.3+ can import a folder without one (a \"namespace package\"), but a normal package includes it."},
+  ],
+  quiz: [
+    {q:"import math as m. Which works?", opts:["math.sqrt(16)","m.sqrt(16)","sqrt(16)"], a:1, why:"After renaming, the module is only reachable as <code>m</code>."},
+    {q:"Which file marks a folder as a package?", opts:["init.py","__init__.py","package.py"], a:1, why:"Two underscores on each side."},
+    {q:"What does dir(module) show?", opts:["The folder path","The names inside the module","The module's docstring"], a:1, why:"dir() lists the names a module defines."},
+  ],
+  cards: [
+    ["Module vs package?", "Module: one .py file. Package: a folder of modules with <code>__init__.py</code>."],
+    ["Import only one thing from a module?", "<code>from datetime import datetime</code>"],
+    ["Why avoid <code>from x import *</code>?", "It can overwrite your own names without warning."],
+    ["List the names inside a module?", "<code>dir(module)</code>"],
+  ],
+},
+{
+  id: "numpy1", title: "NumPy: making arrays", mins: 7, pages: "p.36–41",
+  tldr: "NumPy arrays are fast, fixed-type grids of numbers. Learn ndim and shape, and the ways to create them.",
+  blocks: [
+    {t:"p", h:"Python lists are flexible but slow for maths. NumPy adds multi-dimensional arrays that sit closer to the hardware. People call this <em>array-oriented computing</em>."},
+    {t:"cell", c:R`import timeit
+import numpy as np
+
+# seconds to run each line 1000 times
+py = timeit.timeit("[i**2 for i in range(1000)]", number=1000)
+npy = timeit.timeit("a**2", setup="import numpy as np; a = np.arange(1000)", number=1000)
+print(f"Python list: {py:.4f}s   NumPy: {npy:.4f}s")`, o:R`Python list: 0.0330s   NumPy: 0.0008s`, note:"Your numbers will differ, but NumPy is roughly 40× faster here, and the gap grows with bigger arrays. That's why data science uses it. (In Jupyter, <code>%timeit</code> does the same thing.)"},
+    {t:"h", h:"Dimensions and shape"},
+    {t:"cell", c:R`a = np.array([0, 1, 2, 3])                        # 1-D
+print(a.ndim, a.shape, len(a))
+
+b = np.array([[0, 1, 2], [3, 4, 5]])               # 2-D
+print(b.ndim, b.shape, len(b))                     # len = size of first dimension
+
+c = np.array([[[0, 1], [2, 3]], [[4, 5], [6, 7]]]) # 3-D
+print(c.ndim, c.shape)`, o:R`1 (4,) 4
+2 (2, 3) 2
+3 (2, 2, 2)`},
+    {t:"keys", items:[["1-D","vector"],["2-D","matrix (shape is rows, columns)"],["3-D","tensor"]]},
+    {t:"h", h:"Ways to create arrays"},
+    {t:"cell", c:R`np.arange(10)          # like range: 0 ... 9
+np.arange(1, 10, 2)    # start, end (excluded), step -> [1 3 5 7 9]
+np.linspace(0, 1, 6)   # start, end, NUMBER of points -> [0. 0.2 0.4 0.6 0.8 1.]
+np.ones((3, 3))        # 3x3 of 1.
+np.zeros((3, 3))       # 3x3 of 0.
+np.eye(3)              # identity: 1s on the diagonal
+np.eye(3, 2)           # 3 rows, 2 columns
+np.diag([1, 2, 3, 4])  # 4x4 with these on the diagonal
+np.diag(a)             # pull the diagonal OUT of a 2-D array
+`, o:null},
+    {t:"h", h:"Random numbers"},
+    {t:"cell", c:R`rng = np.random.default_rng(seed=42)   # a random generator; the seed makes it repeatable
+print(rng.random(4))            # uniform between 0 and 1
+print(rng.standard_normal(4))   # standard normal (bell curve)
+print(rng.integers(0, 20, 5))   # 5 whole numbers from 0 to 19`, o:R`[0.77395605 0.43887844 0.85859792 0.69736803]
+[-1.95103519 -1.30217951  0.1278404  -0.31624259]
+[10  2 16  9 10]`, note:"Older tutorials use <code>np.random.rand</code> and <code>np.random.randn</code>. They still work, but <code>default_rng()</code> is the recommended way now."},
+    {t:"warn", h:"<code>arange</code> takes a step. <code>linspace</code> takes how many points you want."},
+    {t:"cell", c:R`print(np.eye(3))
+print(np.diag([1, 2, 3]))`, o:R`[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]
+[[1 0 0]
+ [0 2 0]
+ [0 0 3]]`},
+    {t:"h", h:"Data types (dtype)"},
+    {t:"p", h:"A trailing dot like <code>2.</code> means the number is a float. Each array has one type for all its items."},
+    {t:"cell", c:R`print(np.arange(10).dtype)
+print(np.arange(10, dtype='float64'))
+print(np.zeros((3, 3)).dtype)            # zeros and ones default to float
+print(np.array([1+2j, 2+4j]).dtype)
+print(np.array([True, False]).dtype)
+print(np.array(['Ram', 'Robert', 'Rahim']).dtype)`, o:R`int64
+[0. 1. 2. 3. 4. 5. 6. 7. 8. 9.]
+float64
+complex128
+bool
+<U6`},
+    {t:"new", h:"<code>&lt;U6</code> means Unicode text of up to 6 characters."},
+  ],
+  quiz: [
+    {q:"np.arange(2, 10, 3)?", opts:["[2 5 8]","[2 5 8 11]","[2. 6. 10.]"], a:0, why:"Start 2, step 3, stop before 10."},
+    {q:"np.zeros((2, 3)).shape?", opts:["(3, 2)","(2, 3)","6"], a:1, why:"Shape is (rows, columns), as you passed it."},
+    {q:"np.linspace(0, 10, 3)?", opts:["[0. 5. 10.]","[0 3 6 9]","[0. 3.33 6.67]"], a:0, why:"3 evenly spaced points, and both ends are included."},
+    {q:"What is np.ones(3).dtype?", opts:["int64","float64","bool"], a:1, why:"ones and zeros default to float64."},
+  ],
+  cards: [
+    ["ndim vs shape?", "ndim: number of dimensions. shape: size along each, e.g. (2, 3)."],
+    ["arange vs linspace?", "arange(start, stop, step). linspace(start, stop, how_many). linspace includes the end."],
+    ["What does <code>np.eye(3)</code> make?", "A 3×3 identity matrix."],
+    ["How do you make random numbers in modern NumPy?", "<code>rng = np.random.default_rng()</code>, then <code>rng.random()</code>, <code>rng.standard_normal()</code> or <code>rng.integers()</code>."],
+    ["1-D / 2-D / 3-D are called?", "Vector / matrix / tensor."],
+  ],
+},
+{
+  id: "numpy2", title: "NumPy: indexing and maths", mins: 9, pages: "p.41–47",
+  tldr: "Slices are views that share memory. Masks and index lists make copies. Maths happens element by element, and axis picks the direction.",
+  blocks: [
+    {t:"h", h:"Indexing and slicing"},
+    {t:"cell", c:R`a = np.arange(10)
+print(a[5])
+
+a = np.diag([1, 2, 3])
+print(a[2, 2])          # row 2, column 2
+a[2, 1] = 5             # assign
+print(a)`, o:R`5
+3
+[[1 0 0]
+ [0 2 0]
+ [0 5 3]]`},
+    {t:"cell", c:R`a = np.arange(10)
+print(a[1:8:2])         # [start : end (excluded) : step]
+a[5:] = 10              # assign to a whole slice
+print(a)
+b = np.arange(5)
+a[5:] = b[::-1]         # b reversed
+print(a)`, o:R`[1 3 5 7]
+[ 0  1  2  3  4 10 10 10 10 10]
+[0 1 2 3 4 4 3 2 1 0]`},
+    {t:"h", h:"Views vs copies"},
+    {t:"cell", c:R`a = np.arange(10)
+b = a[::2]
+print(np.shares_memory(a, b))
+b[0] = 10
+print(a)                # a changed too!
+
+a = np.arange(10)
+c = a[::2].copy()       # force a separate copy
+c[0] = 10
+print(a)                # a is safe`, o:R`True
+[10  1  2  3  4  5  6  7  8  9]
+[0 1 2 3 4 5 6 7 8 9]`},
+    {t:"warn", h:"A slice is a window onto the same memory. Change the slice and you change the original. Use <code>.copy()</code> when you want them separate."},
+    {t:"h", h:"Fancy indexing (masks and index lists)"},
+    {t:"cell", c:R`a = np.array([18, 17, 1, 18, 5, 17, 0, 14, 12, 11, 4, 15, 16, 8, 7])   # e.g. from rng.integers(0, 20, 15)
+mask = (a % 2 == 0)     # True where even
+print(a[mask])          # keep only evens
+a[mask] = -1            # replace evens
+print(a)`, o:R`[18 18  0 14 12  4 16  8]
+[-1 17  1 -1  5 17 -1 -1 -1 11 -1 15 -1 -1  7]`},
+    {t:"cell", c:R`a = np.arange(0, 100, 10)
+print(a[[2, 3, 2, 4, 2]])    # pick positions; repeats allowed
+a[[9, 7]] = -200
+print(a)`, o:R`[20 30 20 40 20]
+[   0   10   20   30   40   50   60 -200   80 -200]`},
+    {t:"p", h:"Fancy indexing always makes a <b>copy</b>, not a view."},
+    {t:"h", h:"Element-by-element maths"},
+    {t:"cell", c:R`a = np.array([1, 2, 3, 4])
+print(a + 1)
+print(a ** 2)
+b = np.ones(4) + 1      # [2. 2. 2. 2.]
+print(a - b)
+print(a * b)`, o:R`[2 3 4 5]
+[ 1  4  9 16]
+[-1.  0.  1.  2.]
+[2. 4. 6. 8.]`},
+    {t:"cell", c:R`c = np.diag([1, 2, 3, 4])
+print(c * c)            # element-by-element
+print(c.dot(c))         # real matrix multiplication (also: c @ c)`, o:R`[[ 1  0  0  0]
+ [ 0  4  0  0]
+ [ 0  0  9  0]
+ [ 0  0  0 16]]
+[[ 1  0  0  0]
+ [ 0  4  0  0]
+ [ 0  0  9  0]
+ [ 0  0  0 16]]`},
+    {t:"warn", h:"Those two match only because c is diagonal. In general <code>*</code> is NOT matrix multiplication. Use <code>@</code> or <code>.dot()</code>."},
+    {t:"h", h:"Comparisons and logic"},
+    {t:"cell", c:R`a = np.array([1, 2, 3, 4])
+b = np.array([5, 2, 2, 4])
+print(a == b)
+print(a > b)
+print(np.array_equal(a, b))     # the whole array at once
+
+x = np.array([1, 1, 0, 0], dtype=bool)
+y = np.array([1, 0, 1, 0], dtype=bool)
+print(np.logical_or(x, y), np.logical_and(x, y))
+print(np.all([True, True, False]), np.any([True, False, False]))`, o:R`[False  True False  True]
+[False False  True False]
+False
+[ True  True  True False] [ True False False False]
+False True`},
+    {t:"cell", c:R`a = np.arange(5)
+print(np.sin(a))
+print(np.log(a))        # log(0) -> -inf, with a warning
+print(np.exp(a))`, o:R`[ 0.          0.84147098  0.90929743  0.14112001 -0.7568025 ]
+[      -inf 0.         0.69314718 1.09861229 1.38629436]
+[ 1.          2.71828183  7.3890561  20.08553692 54.59815003]`},
+    {t:"cell", c:R`np.arange(4) + np.array([1, 2])`, o:R`ValueError: operands could not be broadcast together with shapes (4,) (2,)`, err:true},
+    {t:"h", h:"Sums and the axis argument"},
+    {t:"cell", c:R`x = np.array([[1, 1],
+              [2, 2]])
+print(np.sum(x))
+print(x.sum(axis=0))    # down each column
+print(x.sum(axis=1))    # across each row`, o:R`6
+[3 3]
+[2 4]`},
+    {t:"warn", h:"axis=0 squashes the rows together, so you get one answer per column. axis=1 gives one answer per row."},
+    {t:"cell", c:R`x = np.array([1, 3, 2])
+print(x.min(), x.max(), x.argmin(), x.argmax())   # argmin/argmax = position
+
+x = np.array([1, 2, 3, 1])
+y = np.array([[1, 2, 3], [5, 6, 1]])
+print(x.mean(), np.median(x), np.median(y, axis=-1), x.std())`, o:R`1 3 0 1
+1.75 1.5 [2. 5.] 0.82915619758885`, note:"axis=-1 means the last axis, which for y is across each row."},
+  ],
+  quiz: [
+    {q:"Does a change?", c:R`a = np.arange(5)
+b = a[1:3]
+b[0] = 99`, opts:["Yes","No"], a:0, why:"A slice is a view. Writing to b writes into a."},
+    {q:"x = np.array([[1, 2], [3, 4]]). x.sum(axis=0)?", opts:["[3 7]","[4 6]","10"], a:1, why:"axis=0 adds down each column: 1+3, 2+4."},
+    {q:"np.array([1, 9, 3]).argmax()?", opts:["9","1","2"], a:1, why:"argmax gives the position of the largest value, not the value."},
+    {q:"np.array([1, 2, 3]) > 1?", opts:["True","[False  True  True]","[2 3]"], a:1, why:"Comparisons work element by element and give a boolean array."},
+    {q:"a = np.arange(5); c = a[[0, 1]]; c[0] = 99. Does a change?", opts:["Yes","No"], a:1, why:"Indexing with a list is fancy indexing, which makes a copy."},
+  ],
+  cards: [
+    ["Slice: view or copy?", "View. It shares memory with the original. Use .copy() to separate."],
+    ["Fancy indexing: view or copy?", "Copy."],
+    ["Select only even numbers from array a?", "<code>a[a % 2 == 0]</code>"],
+    ["<code>*</code> vs <code>@</code> on 2-D arrays?", "<code>*</code> is element by element. <code>@</code> (or .dot) is matrix multiplication."],
+    ["sum(axis=0) vs sum(axis=1)?", "axis=0: one result per column. axis=1: one result per row."],
+    ["argmin / argmax return?", "The position of the smallest / largest value."],
+    ["Why does <code>arange(4) + array([1, 2])</code> fail?", "The shapes (4,) and (2,) don't match, so it can't broadcast."],
+  ],
+},
+];
+
+const SHEET = [
+  {h:"The four containers", wide:true, table:true},
+  {h:"Lists", b:R`lst.append(x)     # add one (nests lists)
+lst.extend(l2)    # add each
+lst.insert(i, x)  lst.remove(x)
+lst.pop(i)        # remove + return
+del lst[i]
+lst.sort()        # in place
+sorted(lst)       # new list
+lst[start:end:step]   lst[::-1]
+b = a             # SAME list!
+b = a.copy()      # real copy
+[f(x) for x in xs if cond]`},
+  {h:"Tuples & sets", b:R`t = (1,)          # comma makes it
+t.count(x)  t.index(x)
+t[0] = 9          # TypeError
+
+s = set()         # {} is a dict!
+s.add(x)  s.update([..])
+s.remove(x)       # KeyError if missing
+s.discard(x)      # silent
+a | b   a & b   a - b   a ^ b
+frozenset([..])   # unchangeable set`},
+  {h:"Dictionaries", b:R`d['k']            # KeyError if missing
+d.get('k')        # None if missing
+d['k'] = v        # add / change
+d.pop('k')        # remove + return
+d.popitem()       # last added
+d.keys() d.values() d.items()
+{}.fromkeys(keys, 0)
+{k: v for k, v in d.items() if v > 2}
+d1 | d2           # merge (3.9+)
+'k' in d          # checks KEYS`},
+  {h:"Strings", b:R`s[0]  s[-1]  s[2:5]  s[::-1]
+s.lower()  s.upper()
+s.split(',')      # -> list
+' '.join(lst)     # -> string
+s.find('x')       # index or -1
+s.replace(a, b)
+'or' in s
+s[0] = 'x'        # TypeError (immutable)
+f"Hi {name}"      # f-string
+f"{x:.2f}"        # 2 decimals`},
+  {h:"Operators & flow", b:R`15 // 2 -> 7    -15 // 2 -> -8
+15 % 2  -> 1    2 ** 3   -> 8
+a is b    # same object
+a == b    # same value
+falsy: 0 None False "" [] {}
+range(start, stop, step)  # stop excluded
+break     # leave loop
+continue  # next round
+for/else  # else runs if no break
+x = a if cond else b`},
+  {h:"Functions", b:R`def f(a, b=2, *args, **kwargs):
+    """docstring"""
+    return a + b
+# args -> tuple, kwargs -> dict
+f.__doc__
+lambda x: x * 2
+list(map(f, xs))
+list(filter(f, xs))
+from functools import reduce
+reduce(lambda x, y: x * y, xs)
+divmod(9, 2) -> (4, 1)
+enumerate(xs) -> (i, x)
+isinstance(x, list)`},
+  {h:"Modules", b:R`import math
+import math as m
+from datetime import datetime
+from math import *     # avoid
+dir(module)            # names inside
+package/__init__.py    # makes a package
+import Game.Image.open`},
+  {h:"NumPy: create", b:R`import numpy as np
+np.array([..])   a.ndim  a.shape  a.dtype
+np.arange(1, 10, 2)    # step
+np.linspace(0, 1, 6)   # n points
+np.ones((3,3))  np.zeros((3,3))
+np.eye(3)  np.diag([1,2,3])
+rng = np.random.default_rng()
+rng.random(4)          # uniform 0–1
+rng.standard_normal(4) # normal
+rng.integers(0, 20, 5) # whole numbers
+1-D vector · 2-D matrix · 3-D tensor`},
+  {h:"NumPy: use", b:R`a[2, 1]            # row, col
+a[1:8:2]           # VIEW (shares memory)
+a[::2].copy()      # copy
+a[a % 2 == 0]      # mask -> COPY
+a[[2, 3, 2]]       # index list -> COPY
+a + 1   a * b      # element-wise
+a @ b   a.dot(b)   # matrix multiply
+a == b  np.array_equal(a, b)
+np.any  np.all  np.logical_and
+x.sum(axis=0)      # per column
+x.sum(axis=1)      # per row
+argmin argmax mean median std`},
+];
+
+const EX = {
+ "basics": [
+  {
+   "task": "Set <code>a = 5</code> and <code>b = 9</code>. Swap them in <b>one line</b>, then print both.",
+   "hint": "Multiple assignment works on both sides: <code>x, y = ...</code>",
+   "sol": "a = 5\nb = 9\na, b = b, a\nprint(a, b)",
+   "out": "9 5"
+  },
+  {
+   "task": "Add 10 + 20 + 30 + 40 over <b>two lines</b> without using a backslash. Print the total.",
+   "hint": "Wrap the whole sum in brackets.",
+   "sol": "total = (10 + 20 +\n         30 + 40)\nprint(total)",
+   "out": "100"
+  },
+  {
+   "task": "Use the <code>keyword</code> module to check whether <code>lambda</code> and <code>print</code> are keywords.",
+   "hint": "<code>keyword.iskeyword(\"word\")</code> returns True or False.",
+   "sol": "import keyword\nprint(keyword.iskeyword(\"lambda\"))\nprint(keyword.iskeyword(\"print\"))",
+   "out": "True\nFalse"
+  }
+ ],
+ "types": [
+  {
+   "task": "Remove the duplicates from <code>[3, 1, 3, 2, 1]</code> and get back a <b>sorted list</b>.",
+   "hint": "Convert to a set to drop duplicates, then <code>sorted()</code> gives a list.",
+   "sol": "nums = [3, 1, 3, 2, 1]\nprint(sorted(set(nums)))",
+   "out": "[1, 2, 3]"
+  },
+  {
+   "task": "Turn the text <code>\"123\"</code> into a number, add 7, then turn it back into text and stick <code>\"!\"</code> on the end.",
+   "hint": "<code>int()</code> one way, <code>str()</code> the other.",
+   "sol": "n = int(\"123\") + 7\nprint(str(n) + \"!\")",
+   "out": "130!"
+  },
+  {
+   "task": "Print just the type <b>name</b> of each of these: <code>5, 5.0, \"5\", [5], (5,), {5}, {5: 5}</code>.",
+   "hint": "Loop over them. <code>type(v).__name__</code> gives the name as text.",
+   "sol": "for v in [5, 5.0, \"5\", [5], (5,), {5}, {5: 5}]:\n    print(type(v).__name__)",
+   "out": "int\nfloat\nstr\nlist\ntuple\nset\ndict"
+  }
+ ],
+ "io": [
+  {
+   "task": "With <code>name = \"Ana\"</code> and <code>age = 30</code>, print <code>Ana is 30 years old</code> using an f-string.",
+   "hint": "<code>f\"{name} ...\"</code>",
+   "sol": "name = \"Ana\"\nage = 30\nprint(f\"{name} is {age} years old\")",
+   "out": "Ana is 30 years old"
+  },
+  {
+   "task": "Print pi to 2 decimal places, then to 4.",
+   "hint": "<code>import math</code>, then <code>f\"{math.pi:.2f}\"</code>.",
+   "sol": "import math\nprint(f\"{math.pi:.2f}\")\nprint(f\"{math.pi:.4f}\")",
+   "out": "3.14\n3.1416"
+  },
+  {
+   "task": "Ask the user for two numbers and print their sum.",
+   "hint": "<code>input()</code> gives text. Wrap each in <code>int()</code> before adding.",
+   "sol": "a = int(input(\"First: \"))\nb = int(input(\"Second: \"))\nprint(f\"Sum: {a + b}\")",
+   "out": "First: 4\nSecond: 5\nSum: 9"
+  }
+ ],
+ "ops": [
+  {
+   "task": "Turn 135 minutes into hours and minutes, like <code>2 h 15 min</code>.",
+   "hint": "<code>//</code> gives whole hours, <code>%</code> gives what's left.",
+   "sol": "minutes = 135\nprint(f\"{minutes // 60} h {minutes % 60} min\")",
+   "out": "2 h 15 min"
+  },
+  {
+   "task": "Is 2024 a leap year? It is if it divides by 4, except years that divide by 100 but not by 400.",
+   "hint": "<code>y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)</code>",
+   "sol": "y = 2024\nprint(y % 4 == 0 and (y % 100 != 0 or y % 400 == 0))",
+   "out": "True"
+  },
+  {
+   "task": "With <code>prices = {\"apple\": 1.2}</code>, check whether <code>\"apple\"</code> is a key and whether <code>1.2</code> is a value.",
+   "hint": "<code>in</code> checks keys. For values use <code>in prices.values()</code>.",
+   "sol": "prices = {\"apple\": 1.2}\nprint(\"apple\" in prices)\nprint(1.2 in prices.values())",
+   "out": "True\nTrue"
+  }
+ ],
+ "flow": [
+  {
+   "task": "<b>FizzBuzz</b> for 1 to 15: print Fizz for multiples of 3, Buzz for multiples of 5, FizzBuzz for both, otherwise the number.",
+   "hint": "Check the \"both\" case first (<code>i % 15 == 0</code>).",
+   "sol": "for i in range(1, 16):\n    if i % 15 == 0:\n        print(\"FizzBuzz\")\n    elif i % 3 == 0:\n        print(\"Fizz\")\n    elif i % 5 == 0:\n        print(\"Buzz\")\n    else:\n        print(i)",
+   "out": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz"
+  },
+  {
+   "task": "Add up all the even numbers from 1 to 100 with a <code>for</code> loop.",
+   "hint": "<code>range(2, 101, 2)</code> gives just the evens.",
+   "sol": "total = 0\nfor n in range(2, 101, 2):\n    total += n\nprint(total)",
+   "out": "2550"
+  },
+  {
+   "task": "Find the first number above 10 in <code>[7, 12, 9, 20, 3]</code> and stop there. Print <code>none found</code> if there isn't one.",
+   "hint": "<code>break</code> when you find it, and put the \"none found\" in the loop's <code>else</code>.",
+   "sol": "for n in [7, 12, 9, 20, 3]:\n    if n > 10:\n        print(n)\n        break\nelse:\n    print(\"none found\")",
+   "out": "12"
+  },
+  {
+   "task": "Start at 100 and keep halving with <code>//</code> until you reach 1. Count how many steps that takes.",
+   "hint": "<code>while n > 1:</code> then <code>n //= 2</code> and add 1 to a counter.",
+   "sol": "n = 100\nsteps = 0\nwhile n > 1:\n    n //= 2\n    steps += 1\nprint(steps)",
+   "out": "6"
+  }
+ ],
+ "lists": [
+  {
+   "task": "From <code>[5, 3, 8, 1]</code> print the largest, the smallest, and the list sorted high-to-low <b>without changing the original</b>.",
+   "hint": "<code>max</code>, <code>min</code>, and <code>sorted(..., reverse=True)</code>.",
+   "sol": "nums = [5, 3, 8, 1]\nprint(max(nums), min(nums))\nprint(sorted(nums, reverse=True))\nprint(nums)",
+   "out": "8 1\n[8, 5, 3, 1]\n[5, 3, 8, 1]"
+  },
+  {
+   "task": "Split <code>\"the cat sat on a big mat today\"</code> into words and keep the words with 3 or more letters, in CAPITALS.",
+   "hint": "<code>[w.upper() for w in words if len(w) >= 3]</code>",
+   "sol": "words = \"the cat sat on a big mat today\".split()\nprint([w.upper() for w in words if len(w) >= 3])",
+   "out": "['THE', 'CAT', 'SAT', 'BIG', 'MAT', 'TODAY']"
+  },
+  {
+   "task": "Flatten <code>[[1, 2], [3, 4], [5]]</code> into <code>[1, 2, 3, 4, 5]</code> with one comprehension.",
+   "hint": "Two <code>for</code>s, in the same order you'd write the loops: <code>[x for row in m for x in row]</code>.",
+   "sol": "m = [[1, 2], [3, 4], [5]]\nprint([x for row in m for x in row])",
+   "out": "[1, 2, 3, 4, 5]"
+  },
+  {
+   "task": "Make a <b>real copy</b> of <code>[1, 2, 3]</code>, add 4 to the copy, and show the original didn't change.",
+   "hint": "<code>.copy()</code> or <code>[:]</code>",
+   "sol": "a = [1, 2, 3]\nb = a.copy()\nb.append(4)\nprint(a, b)",
+   "out": "[1, 2, 3] [1, 2, 3, 4]"
+  }
+ ],
+ "tuples": [
+  {
+   "task": "Write <code>min_max(nums)</code> that returns the smallest and largest as a tuple. Unpack the result into two names.",
+   "hint": "<code>return min(nums), max(nums)</code> already makes a tuple.",
+   "sol": "def min_max(nums):\n    return min(nums), max(nums)\n\nlo, hi = min_max([4, 9, 1])\nprint(lo, hi)",
+   "out": "1 9"
+  },
+  {
+   "task": "In <code>('a', 'b', 'a', 'c', 'a')</code>, count the <code>'a'</code>s and find where <code>'c'</code> is.",
+   "hint": "<code>.count()</code> and <code>.index()</code>",
+   "sol": "t = ('a', 'b', 'a', 'c', 'a')\nprint(t.count('a'), t.index('c'))",
+   "out": "3 3"
+  },
+  {
+   "task": "Sort <code>[(\"ana\", 30), (\"ben\", 25), (\"cy\", 35)]</code> by age (the second item).",
+   "hint": "<code>sorted(pairs, key=lambda p: p[1])</code>",
+   "sol": "pairs = [(\"ana\", 30), (\"ben\", 25), (\"cy\", 35)]\nprint(sorted(pairs, key=lambda p: p[1]))",
+   "out": "[('ben', 25), ('ana', 30), ('cy', 35)]"
+  }
+ ],
+ "sets": [
+  {
+   "task": "Ana's friends are <code>{\"ben\", \"cy\", \"dev\"}</code> and Ben's are <code>{\"cy\", \"dev\", \"eli\"}</code>. Print the friends they share, and the ones only Ana has.",
+   "hint": "<code>&amp;</code> for shared, <code>-</code> for only-in-the-first. Wrap in <code>sorted()</code> for a tidy order.",
+   "sol": "ana = {\"ben\", \"cy\", \"dev\"}\nben = {\"cy\", \"dev\", \"eli\"}\nprint(sorted(ana & ben))\nprint(sorted(ana - ben))",
+   "out": "['cy', 'dev']\n['ben']"
+  },
+  {
+   "task": "How many <b>different</b> words are in <code>\"to be or not to be\"</code>?",
+   "hint": "<code>len(set(...split()))</code>",
+   "sol": "print(len(set(\"to be or not to be\".split())))",
+   "out": "4"
+  },
+  {
+   "task": "Check that every letter of <code>\"cab\"</code> appears in <code>\"abcdef\"</code>.",
+   "hint": "Make both into sets and use <code>issubset</code>.",
+   "sol": "print(set(\"cab\").issubset(set(\"abcdef\")))",
+   "out": "True"
+  }
+ ],
+ "dicts": [
+  {
+   "task": "Count each letter in <code>\"banana\"</code> using a dict.",
+   "hint": "<code>counts[ch] = counts.get(ch, 0) + 1</code>",
+   "sol": "counts = {}\nfor ch in \"banana\":\n    counts[ch] = counts.get(ch, 0) + 1\nprint(counts)",
+   "out": "{'b': 1, 'a': 3, 'n': 2}"
+  },
+  {
+   "task": "Flip <code>{'a': 1, 'b': 2}</code> so the values become keys.",
+   "hint": "<code>{v: k for k, v in d.items()}</code>",
+   "sol": "d = {'a': 1, 'b': 2}\nprint({v: k for k, v in d.items()})",
+   "out": "{1: 'a', 2: 'b'}"
+  },
+  {
+   "task": "Print each item in <code>{\"apple\": 1.2, \"bread\": 2.5}</code> as a price, like <code>apple: £1.20</code>.",
+   "hint": "Loop with <code>.items()</code> and use <code>:.2f</code> in an f-string.",
+   "sol": "prices = {\"apple\": 1.2, \"bread\": 2.5}\nfor item, price in prices.items():\n    print(f\"{item}: £{price:.2f}\")",
+   "out": "apple: £1.20\nbread: £2.50"
+  },
+  {
+   "task": "Merge <code>{'a': 1, 'b': 2}</code> and <code>{'b': 9, 'c': 3}</code>. Which <code>'b'</code> wins?",
+   "hint": "<code>d1 | d2</code>. The right-hand dict wins on a clash.",
+   "sol": "d1 = {'a': 1, 'b': 2}\nd2 = {'b': 9, 'c': 3}\nprint(d1 | d2)",
+   "out": "{'a': 1, 'b': 9, 'c': 3}"
+  }
+ ],
+ "strings": [
+  {
+   "task": "Count the vowels in <code>\"Programming in Python\"</code>.",
+   "hint": "Loop over <code>s.lower()</code> and check <code>ch in \"aeiou\"</code>.",
+   "sol": "s = \"Programming in Python\"\nprint(sum(1 for ch in s.lower() if ch in \"aeiou\"))",
+   "out": "5"
+  },
+  {
+   "task": "Turn <code>\"hello big world\"</code> into <code>\"World Big Hello\"</code>.",
+   "hint": "<code>.title()</code>, <code>.split()</code>, reverse with <code>[::-1]</code>, then <code>' '.join()</code>.",
+   "sol": "s = \"hello big world\"\nprint(' '.join(s.title().split()[::-1]))",
+   "out": "World Big Hello"
+  },
+  {
+   "task": "Is <code>\"Never odd or even\"</code> a palindrome if you ignore spaces and capitals?",
+   "hint": "Remove spaces with <code>.replace(\" \", \"\")</code>, lowercase it, compare with its reverse.",
+   "sol": "s = \"Never odd or even\"\nclean = s.replace(\" \", \"\").lower()\nprint(clean == clean[::-1])",
+   "out": "True"
+  }
+ ],
+ "functions": [
+  {
+   "task": "Write <code>area(width, height=1)</code>. Call it as <code>area(5)</code> and <code>area(5, 3)</code>.",
+   "hint": "Give <code>height</code> a default in the <code>def</code> line.",
+   "sol": "def area(width, height=1):\n    return width * height\n\nprint(area(5), area(5, 3))",
+   "out": "5 15"
+  },
+  {
+   "task": "Write <code>average(*nums)</code> that takes any number of values and returns their mean.",
+   "hint": "<code>nums</code> is a tuple, so <code>sum(nums) / len(nums)</code> works.",
+   "sol": "def average(*nums):\n    return sum(nums) / len(nums)\n\nprint(average(2, 4, 9))",
+   "out": "5.0"
+  },
+  {
+   "task": "Write a <b>recursive</b> <code>sum_digits(n)</code>, so <code>sum_digits(1234)</code> gives 10.",
+   "hint": "Last digit is <code>n % 10</code>. The rest is <code>n // 10</code>. Stop when <code>n</code> is 0.",
+   "sol": "def sum_digits(n):\n    return 0 if n == 0 else n % 10 + sum_digits(n // 10)\n\nprint(sum_digits(1234))",
+   "out": "10"
+  },
+  {
+   "task": "Write <code>describe(**info)</code> that prints each <code>key: value</code> on its own line.",
+   "hint": "<code>info</code> is a dict, so loop over <code>info.items()</code>.",
+   "sol": "def describe(**info):\n    for key, value in info.items():\n        print(f\"{key}: {value}\")\n\ndescribe(name=\"Ana\", city=\"Leeds\")",
+   "out": "name: Ana\ncity: Leeds"
+  }
+ ],
+ "builtins": [
+  {
+   "task": "Convert <code>[0, 25, 100]</code> Celsius to Fahrenheit with <code>map</code> and a lambda.",
+   "hint": "F = C × 9/5 + 32",
+   "sol": "temps = [0, 25, 100]\nprint(list(map(lambda c: c * 9 / 5 + 32, temps)))",
+   "out": "[32.0, 77.0, 212.0]"
+  },
+  {
+   "task": "Keep only the words starting with <code>\"p\"</code> from <code>[\"python\", \"java\", \"perl\", \"go\"]</code>, using <code>filter</code>.",
+   "hint": "<code>w.startswith(\"p\")</code>",
+   "sol": "langs = [\"python\", \"java\", \"perl\", \"go\"]\nprint(list(filter(lambda w: w.startswith(\"p\"), langs)))",
+   "out": "['python', 'perl']"
+  },
+  {
+   "task": "Print a numbered shopping list starting at 1: milk, eggs, bread.",
+   "hint": "<code>enumerate(items, start=1)</code>",
+   "sol": "for i, item in enumerate([\"milk\", \"eggs\", \"bread\"], start=1):\n    print(f\"{i}. {item}\")",
+   "out": "1. milk\n2. eggs\n3. bread"
+  },
+  {
+   "task": "Find the biggest number in <code>[3, 9, 2]</code> using <code>reduce</code> (no <code>max</code>).",
+   "hint": "<code>lambda a, b: a if a &gt; b else b</code>",
+   "sol": "from functools import reduce\nprint(reduce(lambda a, b: a if a > b else b, [3, 9, 2]))",
+   "out": "9"
+  }
+ ],
+ "modules": [
+  {
+   "task": "Use <code>math</code> to get the square root of 144 and round 4.2 <b>up</b>.",
+   "hint": "<code>math.sqrt</code> and <code>math.ceil</code>",
+   "sol": "import math\nprint(math.sqrt(144), math.ceil(4.2))",
+   "out": "12.0 5"
+  },
+  {
+   "task": "Import just <code>date</code> from <code>datetime</code> and print the current year.",
+   "hint": "<code>from datetime import date</code>, then <code>date.today().year</code>.",
+   "sol": "from datetime import date\nprint(date.today().year)",
+   "out": "2026"
+  },
+  {
+   "task": "Make your own module: a file <code>greetings.py</code> with a <code>hello(name)</code> function, used from <code>main.py</code>.",
+   "hint": "Both files go in the same folder. In <code>main.py</code>: <code>import greetings</code>.",
+   "sol": "# greetings.py\ndef hello(name):\n    \"\"\"Return a friendly greeting.\"\"\"\n    return f\"Hello, {name}!\"\n\n# main.py\nimport greetings\nprint(greetings.hello(\"Ana\"))",
+   "out": "Hello, Ana!"
+  }
+ ],
+ "numpy1": [
+  {
+   "task": "Make a 3×3 array of the numbers 1 to 9.",
+   "hint": "<code>np.arange(1, 10)</code>, then <code>.reshape(3, 3)</code> folds it into rows.",
+   "sol": "import numpy as np\nprint(np.arange(1, 10).reshape(3, 3))",
+   "out": "[[1 2 3]\n [4 5 6]\n [7 8 9]]"
+  },
+  {
+   "task": "Make 5 evenly spaced points from 0 to 100.",
+   "hint": "<code>linspace</code> takes how many points you want.",
+   "sol": "import numpy as np\nprint(np.linspace(0, 100, 5))",
+   "out": "[  0.  25.  50.  75. 100.]"
+  },
+  {
+   "task": "Make a 4×4 identity matrix and print its <code>shape</code> and <code>dtype</code>.",
+   "hint": "<code>np.eye(4)</code>",
+   "sol": "import numpy as np\nm = np.eye(4)\nprint(m.shape, m.dtype)",
+   "out": "(4, 4) float64"
+  }
+ ],
+ "numpy2": [
+  {
+   "task": "From <code>np.arange(1, 11)</code>, keep only values above 5.",
+   "hint": "A mask: <code>a[a &gt; 5]</code>",
+   "sol": "import numpy as np\na = np.arange(1, 11)\nprint(a[a > 5])",
+   "out": "[ 6  7  8  9 10]"
+  },
+  {
+   "task": "For <code>[[1, 2, 3], [4, 5, 6]]</code>, print the column sums and the row sums.",
+   "hint": "<code>axis=0</code> per column, <code>axis=1</code> per row.",
+   "sol": "import numpy as np\nx = np.array([[1, 2, 3], [4, 5, 6]])\nprint(x.sum(axis=0))\nprint(x.sum(axis=1))",
+   "out": "[5 7 9]\n[ 6 15]"
+  },
+  {
+   "task": "In <code>[3, -1, 4, -5, 2]</code>, replace every negative with 0.",
+   "hint": "Assign through a mask: <code>a[a &lt; 0] = 0</code>",
+   "sol": "import numpy as np\na = np.array([3, -1, 4, -5, 2])\na[a < 0] = 0\nprint(a)",
+   "out": "[3 0 4 0 2]"
+  },
+  {
+   "task": "Scale <code>[10, 20, 30]</code> so the smallest becomes 0 and the largest 1.",
+   "hint": "<code>(x - x.min()) / (x.max() - x.min())</code>",
+   "sol": "import numpy as np\nx = np.array([10, 20, 30])\nprint((x - x.min()) / (x.max() - x.min()))",
+   "out": "[0.  0.5 1. ]"
+  }
+ ]
+};
+
+/* ======================= STATE ======================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("pyagain:" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("pyagain:" + k, JSON.stringify(v)); } catch {} },
+};
+let done = new Set(store.get("done", []));
+let current = Math.min(store.get("current", 0), CH.length - 1);
+let hideOut = store.get("hideOut", false);
+let exDone = new Set(store.get("exDone", []));
+const quizState = {}; // chapterId -> {answered: {qi: chosen}}
+
+/* ======================= HELPERS ======================= */
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const KW = new Set("False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" "));
+const BI = new Set("print len range type list set dict tuple str int float input id isinstance sorted reversed sum min max map filter enumerate divmod dir abs open".split(" "));
+function hl(code) {
+  const re = /(#[^\n]*)|("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(\b\d+\.?\d*(?:e[+-]?\d+)?j?\b)|([A-Za-z_]\w*)|(%timeit)/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(code))) {
+    out += esc(code.slice(last, m.index));
+    const [tok, com, str, num, id, magic] = m;
+    if (com) out += `<span class="t-com">${esc(tok)}</span>`;
+    else if (str) out += `<span class="t-str">${esc(tok)}</span>`;
+    else if (num) out += `<span class="t-num">${esc(tok)}</span>`;
+    else if (magic) out += `<span class="t-kw">${esc(tok)}</span>`;
+    else if (id && KW.has(id)) out += `<span class="t-kw">${id}</span>`;
+    else if (id && (BI.has(id) || code[m.index + id.length] === "(")) out += `<span class="t-fn">${id}</span>`;
+    else out += esc(tok);
+    last = re.lastIndex;
+  }
+  return out + esc(code.slice(last));
+}
+const pad = n => String(n).padStart(2, "0");
+let cellNo = 0;
+
+function cellHTML(c, o, opts = {}) {
+  cellNo++;
+  let h = `<div class="cell"><div class="prompt">In [${cellNo}]:</div><div class="code"><pre>${hl(c)}</pre></div>`;
+  if (o !== null && o !== undefined) {
+    h += `<div class="prompt out">${opts.err ? "Error" : "Out:"}</div><div class="output${opts.err ? " err" : ""}"><button class="reveal" type="button">Guess first, then tap to show</button><pre>${esc(o)}</pre></div>`;
+  }
+  if (opts.note) h += `<p class="cell-note">${opts.note}</p>`;
+  return h + `</div>`;
+}
+
+/* ======================= RENDER: LEARN ======================= */
+function renderRail() {
+  const ol = document.getElementById("rail");
+  ol.innerHTML = CH.map((c, i) => `<li><button class="lvl${done.has(c.id) ? " done" : ""}" data-i="${i}" ${i === current ? 'aria-current="true"' : ""}><span class="n"><span>${pad(i + 1)}</span></span><span class="t">${c.title}</span><span class="m">${c.mins}m</span></button></li>`).join("");
+  ol.querySelectorAll(".lvl").forEach(b => b.onclick = () => go(+b.dataset.i));
+  const cur = ol.querySelector('[aria-current="true"]');
+  if (cur && window.matchMedia("(max-width: 860px)").matches) cur.scrollIntoView({ block: "nearest", inline: "center" });
+}
+
+function renderProgress() {
+  const exTotal = Object.values(EX).reduce((n, l) => n + l.length, 0);
+  document.getElementById("prog-label").textContent = `${done.size}/${CH.length} levels · ${exDone.size}/${exTotal} exercises`;
+  document.getElementById("prog-bar").style.width = (done.size / CH.length * 100) + "%";
+}
+
+function renderChapter() {
+  const c = CH[current];
+  cellNo = 0;
+  const qs = quizState[c.id] || (quizState[c.id] = { answered: {} });
+  let h = `<div class="chap-head">
+    <div class="eyebrow"><span class="pg">Level ${pad(current + 1)} of ${CH.length}</span><span>About ${c.mins} min</span><span>Your notes ${c.pages}</span></div>
+    <h1>${c.title}</h1>
+    <p class="tldr"><b>The short version</b>${c.tldr}</p>
+    <div class="mode-row"><label class="switch"><input type="checkbox" id="hide-out" ${hideOut ? "checked" : ""}> Hide outputs so I can guess first</label></div>
+  </div>`;
+  for (const b of c.blocks) {
+    if (b.t === "p") h += `<p>${b.h}</p>`;
+    else if (b.t === "h") h += `<h3>${b.h}</h3>`;
+    else if (b.t === "keys") h += `<div class="keys">${b.items.map(([k, v]) => `<div class="k">${esc(k)}</div><div>${v}</div>`).join("")}</div>`;
+    else if (b.t === "cell") h += cellHTML(b.c, b.o, { err: b.err, note: b.note });
+    else if (b.t === "warn") h += `<p class="hand">${b.h}</p>`;
+    else if (b.t === "new") h += `<div class="new"><b>Good to know</b>${b.h}</div>`;
+    else if (b.t === "tree") h += `<div class="tree"><pre>${esc(b.h)}</pre></div>`;
+    else if (b.t === "table") h += `<div class="tbl"><table><thead><tr>${b.head.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(x => x === "y" ? `<td class="y">yes</td>` : x === "n" ? `<td class="n">no</td>` : `<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  }
+  const exs = EX[c.id] || [];
+  h += `<section class="practice" aria-label="Practice"><h3>Practice <span class="score" id="ex-score"></span></h3>
+    <p class="ex-intro">Write it yourself first, in Python or right here in the box. Then compare with the solution. Your typing is saved in this browser.</p>`;
+  exs.forEach((e, i) => {
+    const key = `${c.id}-${i}`;
+    h += `<div class="ex" data-key="${key}">
+      <div class="ex-head"><span class="ex-n">Exercise ${i + 1}</span><label class="ex-done"><input type="checkbox" id="exdone-${key}" ${exDone.has(key) ? "checked" : ""}> I did it</label></div>
+      <p class="ex-task">${e.task}</p>
+      <textarea id="ex-${key}" spellcheck="false" autocapitalize="off" autocomplete="off" rows="4" placeholder="Your code here…" aria-label="Your answer to exercise ${i + 1}">${esc(store.get("draft:" + key, ""))}</textarea>
+      <div class="ex-btns"><button type="button" class="btn small" data-act="hint">Show hint</button><button type="button" class="btn small" data-act="sol">Show solution</button></div>
+      <p class="ex-hint" hidden>💡 ${e.hint}</p>
+      <div class="ex-sol" hidden>${cellHTML(e.sol, e.out)}</div>
+    </div>`;
+  });
+  h += `</section>`;
+  h += `<section class="quiz" aria-label="Quick check"><h3>Quick check <span class="score" id="score"></span></h3>`;
+  c.quiz.forEach((q, qi) => {
+    h += `<div class="q" data-qi="${qi}"><p class="qt">${q.q}</p>`;
+    if (q.c) h += `<div class="code"><pre>${hl(q.c)}</pre></div>`;
+    h += `<div class="opts">${q.opts.map((o, oi) => `<button class="opt" type="button" data-oi="${oi}">${esc(o)}</button>`).join("")}</div><p class="why" hidden></p></div>`;
+  });
+  h += `</section>`;
+  const isDone = done.has(c.id);
+  h += `<div class="nav">
+    ${current > 0 ? `<button class="btn" id="prev" type="button">← ${CH[current - 1].title}</button>` : ""}
+    <span class="spacer"></span>
+    <button class="btn donebtn" id="mark" type="button" aria-pressed="${isDone}">${isDone ? "✓ Done" : "Mark as done"}</button>
+    ${current < CH.length - 1 ? `<button class="btn primary" id="next" type="button">Next: ${CH[current + 1].title} →</button>` : `<button class="btn primary" id="to-drill" type="button">Finish with flashcards →</button>`}
+  </div>`;
+
+  const main = document.getElementById("chapter");
+  main.innerHTML = h;
+  main.classList.toggle("hidden-out", hideOut);
+
+  main.querySelector("#hide-out").onchange = e => { hideOut = e.target.checked; store.set("hideOut", hideOut); main.classList.toggle("hidden-out", hideOut); main.querySelectorAll(".output").forEach(o => o.classList.remove("shown")); };
+  main.querySelectorAll(".output").forEach(o => {
+    o.querySelector(".reveal").onclick = () => { o.querySelector("pre").style.filter = "none"; o.querySelector("pre").style.userSelect = "auto"; o.querySelector(".reveal").remove(); };
+  });
+  const exScore = () => {
+    const n = exs.filter((_, i) => exDone.has(`${c.id}-${i}`)).length;
+    document.getElementById("ex-score").textContent = `${n} of ${exs.length} done`;
+  };
+  exScore();
+  main.querySelectorAll(".ex").forEach(exEl => {
+    const key = exEl.dataset.key;
+    const ta = exEl.querySelector("textarea");
+    ta.oninput = () => store.set("draft:" + key, ta.value);
+    ta.onkeydown = ev => {
+      if (ev.key === "Tab" && !ev.shiftKey) {
+        ev.preventDefault();
+        const a = ta.selectionStart, b = ta.selectionEnd;
+        ta.value = ta.value.slice(0, a) + "    " + ta.value.slice(b);
+        ta.selectionStart = ta.selectionEnd = a + 4;
+        store.set("draft:" + key, ta.value);
+      }
+    };
+    exEl.querySelector('[data-act="hint"]').onclick = ev => { const el = exEl.querySelector(".ex-hint"); el.hidden = !el.hidden; ev.target.textContent = el.hidden ? "Show hint" : "Hide hint"; };
+    exEl.querySelector('[data-act="sol"]').onclick = ev => {
+      const el = exEl.querySelector(".ex-sol"); el.hidden = !el.hidden; ev.target.textContent = el.hidden ? "Show solution" : "Hide solution";
+      el.querySelectorAll(".reveal").forEach(r => r.click());
+    };
+    exEl.querySelector(`#exdone-${key}`).onchange = ev => {
+      if (ev.target.checked) exDone.add(key); else exDone.delete(key);
+      store.set("exDone", [...exDone]); exScore(); renderProgress();
+    };
+  });
+  main.querySelectorAll(".q").forEach(qEl => {
+    const qi = +qEl.dataset.qi, q = c.quiz[qi];
+    const show = chosen => {
+      qEl.querySelectorAll(".opt").forEach((b, oi) => {
+        b.disabled = true;
+        if (oi === q.a) b.classList.add("right");
+        else if (oi === chosen) b.classList.add("wrong");
+      });
+      const why = qEl.querySelector(".why");
+      why.innerHTML = `<strong>${chosen === q.a ? "Yes." : "Not quite."}</strong> ${q.why}`;
+      why.hidden = false;
+    };
+    if (qs.answered[qi] !== undefined) show(qs.answered[qi]);
+    qEl.querySelectorAll(".opt").forEach(b => b.onclick = () => { qs.answered[qi] = +b.dataset.oi; show(+b.dataset.oi); updateScore(); });
+  });
+  const updateScore = () => {
+    const ans = Object.entries(qs.answered);
+    const right = ans.filter(([qi, ch]) => c.quiz[qi].a === ch).length;
+    document.getElementById("score").textContent = ans.length ? `${right} of ${c.quiz.length} right` : `${c.quiz.length} questions`;
+    if (ans.length === c.quiz.length && !done.has(c.id)) { done.add(c.id); saveDone(); const m = document.getElementById("mark"); m.setAttribute("aria-pressed", "true"); m.textContent = "✓ Done"; }
+  };
+  updateScore();
+  const prev = main.querySelector("#prev"); if (prev) prev.onclick = () => go(current - 1);
+  const next = main.querySelector("#next"); if (next) next.onclick = () => go(current + 1);
+  const td = main.querySelector("#to-drill"); if (td) td.onclick = () => setView("drill");
+  main.querySelector("#mark").onclick = e => {
+    if (done.has(c.id)) done.delete(c.id); else done.add(c.id);
+    saveDone();
+    e.target.setAttribute("aria-pressed", done.has(c.id));
+    e.target.textContent = done.has(c.id) ? "✓ Done" : "Mark as done";
+  };
+}
+function saveDone() { store.set("done", [...done]); renderProgress(); renderRail(); }
+function go(i) {
+  current = i; store.set("current", i);
+  renderRail(); renderChapter();
+  window.scrollTo(0, 0);
+  document.getElementById("chapter").focus({ preventScroll: true });
+}
+
+/* ======================= RENDER: DRILL ======================= */
+const ALL_CARDS = CH.flatMap((c, ci) => c.cards.map(([f, b]) => ({ f, b, ci })));
+let drillFilter = "all", deck = [], flipped = false, known = 0;
+function buildDeck() {
+  deck = ALL_CARDS.filter(x => drillFilter === "all" || (drillFilter === "done" ? done.has(CH[x.ci].id) : x.ci === +drillFilter));
+  for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+  known = 0; flipped = false; renderCard();
+}
+function renderFilters() {
+  const f = document.getElementById("drill-filters");
+  const opts = [["all", `All ${ALL_CARDS.length}`], ["done", "Levels I've done"]];
+  f.innerHTML = opts.map(([v, l]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${drillFilter === v}">${l}</button>`).join("") +
+    `<select class="chip" id="drill-level" aria-label="One level"><option value="">One level…</option>${CH.map((c, i) => `<option value="${i}" ${drillFilter === String(i) ? "selected" : ""}>${pad(i + 1)} ${c.title}</option>`).join("")}</select>`;
+  f.querySelectorAll("button.chip").forEach(b => b.onclick = () => { drillFilter = b.dataset.v; renderFilters(); buildDeck(); });
+  f.querySelector("#drill-level").onchange = e => { if (e.target.value !== "") { drillFilter = e.target.value; renderFilters(); buildDeck(); } };
+}
+function renderCard() {
+  const el = document.getElementById("card");
+  const cnt = document.getElementById("drill-count");
+  if (!deck.length) {
+    el.innerHTML = known
+      ? `<div class="from">Pile cleared</div><div class="face">You got all ${known}. Nice.</div><div class="hint">Pick another set above, or go back to Learn.</div>`
+      : `<div class="from">No cards here yet</div><div class="face">Finish a level first, or choose “All”.</div>`;
+    cnt.textContent = ""; return;
+  }
+  const x = deck[0];
+  el.innerHTML = `<div class="from">Level ${pad(x.ci + 1)} · ${CH[x.ci].title}</div><div class="face">${x.f}</div>` +
+    (flipped ? `<div class="back">${x.b}</div>` : `<div class="hint">Say the answer in your head, then tap or press Space.</div>`);
+  cnt.textContent = `${known} known · ${deck.length} left`;
+}
+function flip() { if (deck.length) { flipped = !flipped; renderCard(); } }
+function knowIt() { if (!deck.length) return; deck.shift(); known++; flipped = false; renderCard(); }
+function again() { if (!deck.length) return; const x = deck.shift(); deck.splice(Math.min(3, deck.length), 0, x); flipped = false; renderCard(); }
+document.getElementById("card").onclick = flip;
+document.getElementById("btn-know").onclick = knowIt;
+document.getElementById("btn-again").onclick = again;
+document.addEventListener("keydown", e => {
+  if (document.getElementById("view-drill").hidden || e.target.tagName === "SELECT") return;
+  if (e.key === " ") { e.preventDefault(); flip(); }
+  else if (e.key === "ArrowRight") knowIt();
+  else if (e.key === "ArrowLeft") again();
+});
+
+/* ======================= RENDER: SHEET ======================= */
+function renderSheet() {
+  const t = CH[1].blocks.find(b => b.t === "table");
+  document.getElementById("sheet").innerHTML = SHEET.map(s => {
+    if (s.table) return `<div class="box wide"><h2>${s.h}</h2><div class="tbl" style="margin:0"><table><thead><tr>${t.head.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map(x => x === "y" ? `<td class="y">yes</td>` : x === "n" ? `<td class="n">no</td>` : `<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+    const body = esc(s.b).replace(/(#[^\n]*)/g, '<span class="c">$1</span>');
+    return `<div class="box"><h2>${s.h}</h2><pre>${body}</pre></div>`;
+  }).join("");
+}
+
+/* ======================= VIEWS ======================= */
+function setView(v) {
+  ["learn", "drill", "sheet"].forEach(x => {
+    document.getElementById("view-" + x).hidden = x !== v;
+    document.getElementById("tab-" + x).setAttribute("aria-selected", x === v);
+  });
+  if (v === "drill") { renderFilters(); buildDeck(); }
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => setView(t.dataset.view));
+
+renderRail(); renderProgress(); renderChapter(); renderSheet();
+const hash = location.hash.slice(1);
+if (hash === "drill" || hash === "sheet") setView(hash);
+</script>
